@@ -28,6 +28,8 @@ MindTab 是一个 Chrome 浏览器扩展，替代你的新标签页。一键收�
 
 ## 安装
 
+> **两个版本的区别**：Chrome Web Store 上的商店版内置官方托管的 AI 服务（免费、无需配置 Key，开箱即用）；本仓库的开源版为 **BYOK** 模式（自带 API Key 直连服务商）。两者书签数据格式完全兼容。
+
 ### 方式一：Chrome Web Store（推荐）
 
 直接安装线上版本：https://chromewebstore.google.com/detail/mindtab/ildffcgdmbcaenjkbapfcgaklaejohme
