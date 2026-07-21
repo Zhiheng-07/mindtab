@@ -13,7 +13,9 @@ MindTab 是一个 Chrome 浏览器扩展，替代你的新标签页。一键收�
 |---|---|---|
 | ![AI 搜索结果](screenshots/界面截图/05_search_results.png) | ![侧边栏](screenshots/界面截图/03_sidebar_open.png) | ![设置](screenshots/界面截图/08_settings.png) |
 
-📺 **[观看演示视频](screenshots/demo.mp4)**（点击后 GitHub 内置播放器直接播放）
+![演示动画](screenshots/demo.gif)
+
+📺 **[下载完整演示视频](screenshots/demo.mp4)**（40秒，4.3MB）
 
 ---
 
