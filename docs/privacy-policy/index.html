@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindTab Privacy Policy</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      line-height: 1.8;
+      color: #1a1a1a;
+      background: #fafafa;
+      padding: 40px 20px 80px;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 48px 40px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .updated {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 28px;
+      margin-bottom: 8px;
+    }
+    p, li {
+      font-size: 14px;
+      color: #333;
+    }
+    ul {
+      padding-left: 20px;
+      margin-top: 6px;
+    }
+    li { margin-bottom: 4px; }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      font-size: 13px;
+      color: #999;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 32px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MindTab Privacy Policy</h1>
+    <!-- TODO: 本文件描述的是「直连自配置 AI 服务商」新架构。线上托管版本须与新版扩展的商店发布同步更新（旧版扩展仍走中转），上线时更新下方日期。 -->
+    <p class="updated">Last updated: June 7, 2026</p>
+
+    <h2>1. Data Collection</h2>
+    <p>MindTab does not collect, transmit, or store any personally identifiable information (PII). We do not track your browsing history, and we do not require account registration.</p>
+
+    <h2>2. Data Storage</h2>
+    <p>All bookmark data (titles, URLs, summaries, tags, and folders) is stored locally in your browser's IndexedDB and chrome.storage.local. This data never leaves your device except when you explicitly trigger AI-powered features (see Section 3).</p>
+
+    <h2>3. Data Usage</h2>
+    <p>When you actively trigger the bookmark save or search feature, MindTab sends limited page information <strong>directly to the AI provider you have configured yourself</strong> (such as DeepSeek, OpenAI, Kimi, or a custom OpenAI-compatible endpoint) to generate summaries, tags, and search results. MindTab does not operate any relay or intermediary server — requests go straight from your browser to your chosen provider. Specifically:</p>
+    <ul>
+      <li>Only the page title, URL, and a limited text excerpt (up to 4,000 characters) are sent</li>
+      <li>Data is sent only when you explicitly initiate a save or search action</li>
+      <li>Your API key is stored only in your local browser (chrome.storage.local) and is transmitted only to the provider you configured, never to MindTab or anyone else</li>
+      <li>How the provider processes and retains this data is governed by that provider's own privacy policy</li>
+      <li>No browsing history, personal information, or other unrelated data is transmitted</li>
+    </ul>
+
+    <h2>4. Data Sharing</h2>
+    <p>MindTab does not sell, trade, or rent your personal data to any third party. Data is shared with third-party services only as described below, and solely to provide core product functionality:</p>
+    <ul>
+      <li><strong>Your configured AI provider</strong> — receives page title, URL, and text excerpt when you trigger AI indexing or search; you choose this provider and supply your own API key</li>
+      <li><strong>Public favicon service</strong> — receives website domain names to fetch site icons for display purposes</li>
+    </ul>
+    <p>No data is shared for advertising, analytics, or any purpose beyond the functionality described above.</p>
+
+    <h2>5. Data Retention</h2>
+    <p>All bookmark data is stored locally on your device for as long as you choose to keep it. MindTab does not retain any data on remote servers. Data sent to your configured AI provider is used to produce the response; its handling and retention are subject to that provider's own policies.</p>
+
+    <h2>6. Data Deletion</h2>
+    <p>You can delete your data at any time through the following methods:</p>
+    <ul>
+      <li>Use the "Clear All Data" option in MindTab's Settings page to remove all local bookmark data</li>
+      <li>Uninstall the MindTab extension, which automatically removes all locally stored data</li>
+    </ul>
+
+    <h2>7. Security</h2>
+    <p>All communications between MindTab and external services are encrypted using HTTPS. Your bookmark data is stored locally using browser-native storage APIs (IndexedDB and chrome.storage) which are sandboxed and accessible only to the MindTab extension.</p>
+
+    <h2>8. Children's Privacy</h2>
+    <p>MindTab is not directed at children under the age of 13. We do not knowingly collect personal information from children.</p>
+
+    <h2>9. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. Any changes will be reflected by updating the "Last updated" date at the top of this page. We encourage you to review this page periodically. Continued use of MindTab after changes constitutes acceptance of the updated policy.</p>
+
+    <h2>10. Contact Us</h2>
+    <p>If you have any questions or concerns about this Privacy Policy, please contact us at <a href="mailto:xu13052071773@gmail.com">xu13052071773@gmail.com</a>.</p>
+
+    <div class="footer">
+      &copy; 2026 MindTab. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
