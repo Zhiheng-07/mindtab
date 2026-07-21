@@ -14,7 +14,6 @@ dist-ssr
 
 # Video / large assets
 *.mp4
-!screenshots/demo.mp4
 
 # Environment variables
 .env
