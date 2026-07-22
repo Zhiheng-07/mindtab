@@ -1,17 +1,17 @@
 # MindTab
 
-> AI 原生书签管理 · 不用整理，随时找得到
+> 不用整理，随时找得到 — smart search, auto-organize, zero effort
 
 MindTab 是一个 Chrome 浏览器扩展，替代你的新标签页。一键收藏当前网页，AI 自动生成中文摘要、智能标签与内容分类；之后用日常语言描述你想找的东西，一搜即达。
 
 - 官网：https://mindtab.cn
 - Chrome Web Store：https://chromewebstore.google.com/detail/mindtab/ildffcgdmbcaenjkbapfcgaklaejohme
 
-![MindTab 主界面](screenshots/界面截图/01_dashboard_light.png)
+![MindTab 主界面](screenshots/01_dashboard_light.png)
 
 | AI 搜索 | 侧边栏文件夹 | 设置 |
 |---|---|---|
-| ![AI 搜索结果](screenshots/界面截图/05_search_results.png) | ![侧边栏](screenshots/界面截图/03_sidebar_open.png) | ![设置](screenshots/界面截图/08_settings.png) |
+| ![AI 搜索结果](screenshots/05_search_results.png) | ![侧边栏](screenshots/03_sidebar_open.png) | ![设置](screenshots/08_settings.png) |
 
 ---
 
@@ -22,13 +22,13 @@ MindTab 是一个 Chrome 浏览器扩展，替代你的新标签页。一键收�
 - **智能分类**：书签自动归类（文章 / 视频 / 工具 / 文档等），支持自定义文件夹、拖拽排序、置顶
 - **导入 / 导出**：标准 HTML 书签文件；待确认面板批量管理新收藏
 - **Glass Dashboard 视觉**：毛玻璃界面，亮色 / 暗色 / 跟随系统，视频壁纸背景
-- **隐私优先 & 自带 Key（BYOK）**：数据全在本地，AI 请求直连你自己配置的服务商
+- **隐私优先**：所有数据存储在本机（IndexedDB），不上传任何服务器；AI 走的也是你自己的 API Key
 
 ---
 
 ## 安装
 
-> **两个版本的区别**：Chrome Web Store 上的商店版内置官方托管的 AI 服务（免费、无需配置 Key，开箱即用）；本仓库的开源版为 **BYOK** 模式（自带 API Key 直连服务商）。两者书签数据格式完全兼容。
+> **版本说明**：商店版内置 AI 服务（免配置，开箱即用）；本仓库为 BYOK 版，需自带 API Key。书签数据格式完全兼容。
 
 ### 方式一：Chrome Web Store（推荐）
 
@@ -53,9 +53,9 @@ npm run build     # 产物在 dist/
 
 ## 配置 AI 服务（首次使用请看这里）
 
-MindTab 采用 **BYOK（Bring Your Own Key）** 模式：你在设置里填入自己的 API Key，扩展直连对应的大模型服务商，**不经过任何中转服务器**。
+MindTab 采用 **BYOK（Bring Your Own Key）** 模式：在设置页面填入自己的 API Key，扩展直连你配置的大模型服务商，不经任何中转服务器。首次保存时 Chrome 会弹出对应服务商的访问授权，点「允许」即可。
 
-配置入口：**设置 → AI 服务** → 选择服务商 → 填入 API Key → 「测试连接」验证 → 保存。首次保存时 Chrome 会弹出对应服务商域名的访问授权，请点击「允许」。
+配置入口：**设置 → AI 服务**
 
 ### 支持的服务商
 
@@ -82,8 +82,7 @@ MindTab 采用 **BYOK（Bring Your Own Key）** 模式：你在设置里填入�
 ## 隐私
 
 - **书签数据**（标题、URL、摘要、标签、文件夹）全部存储在本地浏览器 IndexedDB，不上传任何服务器
-- **API Key** 仅保存在本地 `chrome.storage.local`，不会被发送到除你所配置的 AI 服务商之外的任何地方
-- **AI 请求直连**你配置的服务商，MindTab 不运营、也不经过任何中转服务器
+- **API Key** 仅保存在本地 `chrome.storage.local`，不会发送到除你所配置的 AI 服务商之外的任何地方
 - 网站图标（favicon）通过公共 favicon 服务按域名获取
 
 ---
