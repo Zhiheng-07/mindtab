@@ -34,3 +34,4 @@ screenshots/smoke/
 *.sln
 *.sw?
 .vercel
+mindtab-v*.zip
