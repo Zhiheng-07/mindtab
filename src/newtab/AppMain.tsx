@@ -55,9 +55,10 @@ export function AppMain({
           ref={filterBarRef}
           style={{
             opacity: filterPinned ? 0 : 1,
+            transform: filterPinned ? 'translateY(-6px)' : 'translateY(0)',
             transition: filterPinned
-              ? 'opacity 200ms cubic-bezier(0.4, 0, 1, 1)'
-              : 'opacity 300ms cubic-bezier(0, 0, 0.2, 1)',
+              ? 'opacity 120ms cubic-bezier(0.4, 0, 1, 1), transform 120ms cubic-bezier(0.4, 0, 1, 1)'
+              : 'opacity 200ms cubic-bezier(0.16, 1, 0.3, 1), transform 200ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
           <FilterBar />

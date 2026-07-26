@@ -37,8 +37,8 @@ export function AppHeader({
         backdropFilter: filterPinned ? 'var(--mt-glass-blur)' : 'none',
         borderBottom: `1px solid ${filterPinned ? 'var(--mt-glass-border)' : 'transparent'}`,
         transition: filterPinned
-          ? 'background 300ms cubic-bezier(0, 0, 0.2, 1), backdrop-filter 300ms cubic-bezier(0, 0, 0.2, 1), border-color 300ms cubic-bezier(0, 0, 0.2, 1)'
-          : 'background 120ms cubic-bezier(0.4, 0, 1, 1), backdrop-filter 120ms cubic-bezier(0.4, 0, 1, 1), border-color 120ms cubic-bezier(0.4, 0, 1, 1)',
+          ? 'background 280ms cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 280ms cubic-bezier(0.16, 1, 0.3, 1), border-color 280ms cubic-bezier(0.16, 1, 0.3, 1)'
+          : 'background 140ms cubic-bezier(0.4, 0, 1, 1), backdrop-filter 140ms cubic-bezier(0.4, 0, 1, 1), border-color 140ms cubic-bezier(0.4, 0, 1, 1)',
       }}
     >
       <div className="flex items-center justify-between px-6 py-3" style={{ position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
@@ -85,10 +85,11 @@ export function AppHeader({
             display: 'flex',
             alignItems: 'center',
             opacity: filterPinned ? 1 : 0,
+            transform: filterPinned ? 'translateY(0)' : 'translateY(4px)',
             pointerEvents: filterPinned ? 'auto' : 'none',
             transition: filterPinned
-              ? 'opacity 300ms cubic-bezier(0, 0, 0.2, 1)'
-              : 'opacity 120ms cubic-bezier(0.4, 0, 1, 1)',
+              ? 'opacity 280ms cubic-bezier(0.16, 1, 0.3, 1), transform 280ms cubic-bezier(0.16, 1, 0.3, 1)'
+              : 'opacity 140ms cubic-bezier(0.4, 0, 1, 1), transform 140ms cubic-bezier(0.4, 0, 1, 1)',
           }}
         >
           <FilterBar compact />

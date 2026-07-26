@@ -71,7 +71,12 @@ export function useAppController() {
     }
     const onScroll = () => {
       const rect = el.getBoundingClientRect()
-      setFilterPinned(rect.bottom < 60)
+      // 滞回带（76/84）：pin 与 unpin 阈值分开，避免在临界点来回滚动时抖动
+      // 用户要求触发时机提前 20px（原 56/64 → 76/84）
+      setFilterPinned((prev) => {
+        if (prev) return rect.bottom <= 84
+        return rect.bottom < 76
+      })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     requestAnimationFrame(() => onScroll())
