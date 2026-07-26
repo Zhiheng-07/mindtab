@@ -84,11 +84,122 @@ export async function testAiConnection(
     )
     if (!res.ok) {
       const text = await res.text().catch(() => '')
-      return { ok: false, error: `${res.status}: ${text.slice(0, 200)}` }
+      const errorMessage = classifyApiError(res.status, text, draft.model)
+      return { ok: false, error: errorMessage }
     }
     return { ok: true }
   } catch (e) {
-    return { ok: false, error: (e as Error).message }
+    const msg = (e as Error).message
+    if ((e as Error).name === 'AbortError') {
+      return { ok: false, error: '连接超时，请检查网络或填写正确的 Base URL' }
+    }
+    // TypeError 通常是 fetch 失败（DNS/断网/CORS）
+    if (e instanceof TypeError) {
+      return { ok: false, error: `网络请求失败：${msg}` }
+    }
+    return { ok: false, error: msg }
+  }
+}
+
+/**
+ * 将 HTTP 错误分类为对用户友好的语义化消息。
+ */
+function classifyApiError(status: number, body: string, model: string): string {
+  const lower = body.toLowerCase()
+
+  if (status === 401) {
+    return 'API Key 无效或已过期，请检查后重试'
+  }
+  if (status === 403) {
+    return '没有访问权限，该 API Key 可能不支持此接口'
+  }
+  if (status === 404) {
+    return `接口地址（endpoint）不存在，请检查 Base URL 是否正确`
+  }
+  if (status === 429) {
+    return '请求过于频繁，请稍后再试'
+  }
+
+  // 400/422 — 检查是否是模型名称问题
+  if (status === 400 || status === 422) {
+    if (
+      lower.includes('model') &&
+      (lower.includes('not found') ||
+        lower.includes('not exist') ||
+        lower.includes('invalid') ||
+        lower.includes('does not exist') ||
+        lower.includes('unsupported') ||
+        lower.includes('not support') ||
+        lower.includes('不存在') ||
+        lower.includes('不支持'))
+    ) {
+      return `模型名称 "${model}" 无效，请确认该模型在目标 API 中可用`
+    }
+    if (lower.includes('api key') || lower.includes('apikey') || lower.includes('authentication')) {
+      return 'API Key 无效或已过期'
+    }
+  }
+
+  // 500+
+  if (status >= 500) {
+    return `服务端错误 (${status})，请稍后重试或联系 API 服务商`
+  }
+
+  // 通用回退
+  const snippet = body.slice(0, 120).replace(/\s+/g, ' ').trim()
+  return snippet ? `${status}: ${snippet}` : `请求失败 (HTTP ${status})`
+}
+
+interface ModelListResponse {
+  data?: { id: string }[]
+}
+
+/**
+ * 拉取 OpenAI 兼容厂商的可用模型列表：GET /v1/models。
+ * 接收**未保存的草稿配置**（不读 storage），15s 超时。
+ *
+ * 返回模型 id 数组（按字母排序）。
+ * 任何失败 throw Error（含语义化错误），由 UI 捕获后回退到手动输入。
+ */
+export async function fetchModels(draft: AiConfig): Promise<string[]> {
+  const baseUrl = draft.baseUrl.trim().replace(/\/+$/, '')
+  // resolveChatUrl 拿的是 chat/completions 路径，模型列表需要 /models
+  const modelsUrl = baseUrl.includes('/chat/completions')
+    ? baseUrl.replace(/\/chat\/completions$/, '/models')
+    : baseUrl.endsWith('/v1')
+      ? `${baseUrl}/models`
+      : `${baseUrl}/models`
+
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 15_000)
+  try {
+    const res = await fetch(modelsUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${draft.apiKey}`,
+      },
+      signal: ctrl.signal,
+    })
+    if (!res.ok) {
+      // 部分厂商（如豆包/阶跃）不提供 /models 接口 → 引导手动输入
+      if (res.status === 404) {
+        throw new Error('该服务商不支持在线获取模型列表，请手动输入模型名')
+      }
+      const text = await res.text().catch(() => '')
+      throw new Error(classifyApiError(res.status, text, ''))
+    }
+    const data = (await res.json()) as ModelListResponse
+    if (!data?.data || !Array.isArray(data.data)) {
+      throw new Error('服务器返回的模型列表格式无效')
+    }
+    return data.data.map((m) => m.id).sort()
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') {
+      throw new Error('拉取模型列表超时，请检查网络或 Base URL')
+    }
+    throw e
+  } finally {
+    clearTimeout(timer)
   }
 }
 

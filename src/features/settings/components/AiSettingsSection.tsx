@@ -9,33 +9,36 @@
 // 不读 storage。
 
 import { useEffect, useState } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+import { ChevronDown, Eye, EyeOff } from 'lucide-react'
 import {
   AI_PROVIDER_PRESETS,
+  CUSTOM_MODEL_SUGGESTIONS,
   ensureHostPermission,
   getAiConfig,
   setAiConfig,
   type AiConfig,
   type AiProviderId,
 } from '@/shared/lib/aiProvider'
-import { testAiConnection } from '@/shared/lib/aiClient'
+import { testAiConnection, fetchModels } from '@/shared/lib/aiClient'
 import { Input } from '@/shared/ui/input'
 import { Button } from '@/shared/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from '@/shared/ui/dropdown-menu'
 import { useToastStore } from '@/features/toast'
-import { Row, Section, Segmented } from './SettingsPrimitives'
+import { Row, Section } from './SettingsPrimitives'
 
 const PRIVACY_NOTE =
   'API Key 仅保存在你的浏览器本地（chrome.storage.local），请求直接发送给你选择的服务商，不经过任何第三方服务器'
 
-const CUSTOM_BASE_URL_PLACEHOLDER = '填到 /v1 为止，如 https://api.example.com/v1'
+const CUSTOM_BASE_URL_PLACEHOLDER = '填到 /v1 为止（如 https://api.example.com/v1）或完整 endpoint 路径'
 
 function presetOf(id: AiProviderId) {
   return AI_PROVIDER_PRESETS.find((p) => p.id === id)
-}
-
-/** Segmented 用短标签（'Kimi (Moonshot)' 太宽） */
-function shortLabel(id: AiProviderId, label: string) {
-  return id === 'kimi' ? 'Kimi' : label
 }
 
 function truncateError(msg: string, max = 120): string {
@@ -66,7 +69,21 @@ export function AiSettingsSection() {
 
   const [testing, setTesting] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null)
+  const [testResult, setTestResult] = useState<{
+    ok: boolean
+    error?: string
+    permissionDenied?: boolean
+  } | null>(null)
+
+  // 自定义模型建议下拉
+  const [showModelSuggestions, setShowModelSuggestions] = useState(false)
+  // 建议列表过滤词：独立于 model 值。聚焦时置空（显示全部），用户输入才过滤——
+  // 避免预填的模型名把整个列表过滤成"无匹配"。
+  const [modelFilter, setModelFilter] = useState('')
+
+  // 拉取到的模型列表（每次打开设置重新拉取即可）
+  const [fetchedModels, setFetchedModels] = useState<string[] | null>(null)
+  const [fetchingModels, setFetchingModels] = useState(false)
 
   // SettingsModal 打开时本组件才被挂载，挂载时加载一次已保存配置进草稿
   useEffect(() => {
@@ -87,15 +104,22 @@ export function AiSettingsSection() {
     const next = v as AiProviderId
     setProvider(next)
     setTestResult(null)
+    setShowModelSuggestions(false)
+    // 模型列表按厂商拉取，切换厂商后旧列表作废
+    setFetchedModels(null)
+    setModelFilter('')
     if (next === 'custom') {
-      // 回填已保存的自定义配置（若有）
+      // 回填已保存的自定义配置（若有），否则全部清空
       if (saved?.provider === 'custom') {
         setCustomBaseUrl(saved.baseUrl)
         setModel(saved.model)
       } else {
+        setCustomBaseUrl('')
         setModel('')
       }
     } else {
+      // 切出自定义时清除自定义字段
+      setCustomBaseUrl('')
       const p = presetOf(next)!
       setModel(saved?.provider === next ? saved.model : p.defaultModel)
     }
@@ -136,15 +160,94 @@ export function AiSettingsSection() {
     ensureHostPermission(draft.baseUrl)
       .then(async (granted) => {
         if (!granted) {
-          pushToast('error', `未授权访问 ${hostOf(draft.baseUrl)} 域名，无法调用 AI 服务`)
+          setTestResult({
+            ok: false,
+            error: `未授权访问 ${hostOf(draft.baseUrl)}，请点击「重新授权」以授予域名权限`,
+            permissionDenied: true,
+          })
           return
         }
         setTestResult(await testAiConnection(draft))
       })
       .catch((e) => {
-        pushToast('error', `测试失败：${truncateError((e as Error).message)}`)
+        setTestResult({
+          ok: false,
+          error: `测试失败：${truncateError((e as Error).message)}`,
+        })
       })
       .finally(() => setTesting(false))
+  }
+
+  /** 重新申请 host 权限（权限被拒后的恢复路径） */
+  const handleRetryPermission = () => {
+    const draft = buildValidatedDraft()
+    if (!draft) return
+    setTesting(true)
+    setTestResult(null)
+    ensureHostPermission(draft.baseUrl)
+      .then(async (granted) => {
+        if (!granted) {
+          setTestResult({
+            ok: false,
+            error: `仍被拒绝：未授权访问 ${hostOf(draft.baseUrl)}`,
+            permissionDenied: true,
+          })
+          return
+        }
+        setTestResult(await testAiConnection(draft))
+      })
+      .catch((e) => {
+        setTestResult({
+          ok: false,
+          error: `重新授权失败：${truncateError((e as Error).message)}`,
+        })
+      })
+      .finally(() => setTesting(false))
+  }
+
+  /** 轻量校验：仅检查 Key + baseUrl（不校验模型名——拉取模型时模型可能为空） */
+  const buildFetchDraft = (): AiConfig | null => {
+    const key = apiKey.trim()
+    const baseUrl = effectiveBaseUrl.trim()
+    if (!key) {
+      pushToast('error', '请先填写 API Key')
+      return null
+    }
+    if (!baseUrl) {
+      pushToast('error', '请填写 Base URL')
+      return null
+    }
+    try {
+      void new URL(baseUrl)
+    } catch {
+      pushToast('error', 'Base URL 格式无效，请填写完整地址（含 https://）')
+      return null
+    }
+    return { provider, apiKey: key, baseUrl, model: model.trim() || '' }
+  }
+
+  /** 拉取可用模型列表。必须符合手势约束（onClick 同步 → 第一个异步操作为 ensureHostPermission）。 */
+  const handleFetchModels = () => {
+    const draft = buildFetchDraft()
+    if (!draft) return
+    setFetchingModels(true)
+    ensureHostPermission(draft.baseUrl)
+      .then(async (granted) => {
+        if (!granted) {
+          pushToast('error', `未授权访问 ${hostOf(draft.baseUrl)} 域名，无法拉取模型列表`)
+          return
+        }
+        const models = await fetchModels(draft)
+        setFetchedModels(models)
+        // 清空过滤词，立即展示完整拉取结果
+        setModelFilter('')
+        setShowModelSuggestions(true)
+        pushToast('success', `获取到 ${models.length} 个可用模型`)
+      })
+      .catch((e) => {
+        pushToast('error', `获取模型列表失败：${truncateError((e as Error).message)}`)
+      })
+      .finally(() => setFetchingModels(false))
   }
 
   // onClick 保持同步；第一个异步操作是 ensureHostPermission
@@ -170,7 +273,18 @@ export function AiSettingsSection() {
 
   const summary = saved
     ? `已配置：${presetOf(saved.provider)?.label ?? '自定义'} · ${saved.model}`
-    : '未配置：选择服务商并填写 API Key 后，即可使用 AI 摘要与智能搜索'
+    : '未配置：选择服务商并粘贴 API Key 后，即可使用 AI 摘要与智能搜索'
+
+  // ── 模型建议列表数据源 ──
+  // 有拉取结果时全部使用拉取结果；自定义模式下无拉取结果时用静态建议列表兜底
+  const modelSuggestions: string[] =
+    fetchedModels ?? (provider === 'custom' ? CUSTOM_MODEL_SUGGESTIONS : [])
+  const effectivePlaceholder =
+    provider === 'custom'
+      ? '如 gpt-4o-mini，支持从常用列表选择'
+      : fetchedModels
+        ? '从已获取的列表中选择或手动输入'
+        : undefined
 
   return (
     <Section title="AI 服务">
@@ -178,19 +292,31 @@ export function AiSettingsSection() {
 
       <Row
         label="服务商"
-        hint={preset ? `接入点 ${preset.baseUrl}` : undefined}
+        hint={preset ? `接入点 ${preset.baseUrl}` : '自定义 OpenAI 兼容接入点'}
       >
-        <Segmented
-          value={provider}
-          options={[
-            ...AI_PROVIDER_PRESETS.map((p) => ({
-              value: p.id,
-              label: shortLabel(p.id, p.label),
-            })),
-            { value: 'custom', label: '自定义' },
-          ]}
-          onChange={handleProviderChange}
-        />
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full active:scale-[0.98] gap-1.5"
+            >
+              {provider === 'custom' ? '自定义' : (presetOf(provider)?.label ?? provider)}
+              <ChevronDown size={14} className="opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          {/* z-[300]：设置模态蒙层 zIndex 280，需盖过它（组件默认 z-50 会被蒙层遮住） */}
+          <DropdownMenuContent align="end" className="min-w-[180px] z-[300]">
+            <DropdownMenuRadioGroup value={provider} onValueChange={handleProviderChange}>
+              {AI_PROVIDER_PRESETS.map((p) => (
+                <DropdownMenuRadioItem key={p.id} value={p.id}>
+                  {p.label}
+                </DropdownMenuRadioItem>
+              ))}
+              <DropdownMenuRadioItem value="custom">自定义</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </Row>
 
       <FieldRow label="API Key">
@@ -198,13 +324,14 @@ export function AiSettingsSection() {
           <Input
             type={showKey ? 'text' : 'password'}
             value={apiKey}
-            placeholder="sk-…"
+            placeholder="sk-… 或你所用 API 的 Key"
             autoComplete="off"
             spellCheck={false}
             className="h-9 pr-9"
             onChange={(e) => {
               setApiKey(e.target.value)
               setTestResult(null)
+              setFetchedModels(null)
             }}
           />
           <button
@@ -228,6 +355,11 @@ export function AiSettingsSection() {
             {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         </div>
+        {saved && saved.provider !== provider && apiKey.trim() && (
+          <span style={{ fontSize: 11, color: 'var(--mt-text-muted)', marginTop: 4 }}>
+            不同服务商需使用各自的 API Key
+          </span>
+        )}
       </FieldRow>
 
       {provider === 'custom' && (
@@ -242,24 +374,125 @@ export function AiSettingsSection() {
             onChange={(e) => {
               setCustomBaseUrl(e.target.value)
               setTestResult(null)
+              setFetchedModels(null)
             }}
           />
+          <span style={{ fontSize: 11, color: 'var(--mt-text-muted)', marginTop: 4 }}>
+            OpenAI 兼容协议及其他主流 API 均可用。支持填到 /v1 或直接填完整 endpoint 路径
+          </span>
         </FieldRow>
       )}
 
       <FieldRow label="模型">
-        <Input
-          type="text"
-          value={model}
-          placeholder={provider === 'custom' ? '如 gpt-4o-mini' : undefined}
-          autoComplete="off"
-          spellCheck={false}
-          className="h-9"
-          onChange={(e) => {
-            setModel(e.target.value)
-            setTestResult(null)
-          }}
-        />
+        <div style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Input
+                type="text"
+                value={model}
+                placeholder={effectivePlaceholder}
+                autoComplete="off"
+                spellCheck={false}
+                className="h-9"
+                onChange={(e) => {
+                  setModel(e.target.value)
+                  // 用户实际输入才作为过滤词（区别于预填/点选的值）
+                  setModelFilter(e.target.value)
+                  setTestResult(null)
+                  if (modelSuggestions.length > 0) setShowModelSuggestions(true)
+                }}
+                onFocus={() => {
+                  // 聚焦时清空过滤词 → 显示完整列表（预填的模型名不应过滤掉列表）
+                  setModelFilter('')
+                  if (modelSuggestions.length > 0) setShowModelSuggestions(true)
+                }}
+                onBlur={() => {
+                  setTimeout(() => setShowModelSuggestions(false), 180)
+                }}
+              />
+              {showModelSuggestions && modelSuggestions.length > 0 && (
+                <div
+                  className="glass-solid glass-border"
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    // 需盖过后续兄弟内容（操作按钮行等）；与设置模态内其他浮层层级一致
+                    zIndex: 300,
+                    marginTop: 2,
+                    borderRadius: 'var(--mt-radius-md)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                    maxHeight: 200,
+                    overflowY: 'auto',
+                  }}
+                >
+                  {modelSuggestions.filter(
+                    (m) => !modelFilter || m.toLowerCase().includes(modelFilter.toLowerCase()),
+                  ).length === 0 ? (
+                    <div
+                      style={{
+                        padding: '8px 12px',
+                        fontSize: 12,
+                        color: 'var(--mt-text-muted)',
+                      }}
+                    >
+                      无匹配模型，可手动输入
+                    </div>
+                  ) : (
+                    modelSuggestions
+                      .filter(
+                        (m) => !modelFilter || m.toLowerCase().includes(modelFilter.toLowerCase()),
+                      )
+                      .map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            padding: '6px 12px',
+                            fontSize: 13,
+                            textAlign: 'left',
+                            border: 'none',
+                            color: 'var(--mt-text-strong)',
+                            cursor: 'pointer',
+                          }}
+                          className={
+                            m === model
+                              ? 'bg-[var(--mt-bg-tertiary)] hover:bg-[var(--mt-surface-hover)] transition-colors'
+                              : 'bg-transparent hover:bg-[var(--mt-surface-hover)] transition-colors'
+                          }
+                          onMouseDown={() => {
+                            setModel(m)
+                            setModelFilter(m)
+                            setShowModelSuggestions(false)
+                            setTestResult(null)
+                          }}
+                        >
+                          {m}
+                        </button>
+                      ))
+                  )}
+                </div>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full active:scale-[0.96] shrink-0"
+              onClick={handleFetchModels}
+              disabled={fetchingModels || testing || saving}
+            >
+              {fetchingModels ? '获取中…' : '获取模型列表'}
+            </Button>
+          </div>
+          {fetchedModels && (
+            <span style={{ fontSize: 11, color: 'var(--mt-text-muted)', marginTop: 4 }}>
+              已获取 {fetchedModels.length} 个可用模型
+            </span>
+          )}
+        </div>
       </FieldRow>
 
       {/* 操作行：测试连接 / 保存 + 行内结果 */}
@@ -298,12 +531,36 @@ export function AiSettingsSection() {
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
             title={testResult.ok ? undefined : testResult.error}
           >
             {testResult.ok
               ? '✓ 连接成功'
               : `✗ ${truncateError(testResult.error ?? '连接失败', 60)}`}
+            {testResult.permissionDenied && (
+              <button
+                type="button"
+                onClick={handleRetryPermission}
+                disabled={testing}
+                style={{
+                  fontSize: 11,
+                  color: 'var(--mt-accent)',
+                  background: 'none',
+                  border: '1px solid var(--mt-border)',
+                  borderRadius: 'var(--mt-radius-sm)',
+                  padding: '1px 8px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+                className="hover:bg-[var(--mt-surface-hover)]"
+              >
+                重新授权
+              </button>
+            )}
           </span>
         )}
       </div>

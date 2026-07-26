@@ -65,19 +65,23 @@ export function Segmented({
   value,
   options,
   onChange,
+  wrap,
 }: {
   value: string
   options: { value: string; label: string }[]
   onChange: (v: string) => void
+  wrap?: boolean
 }) {
   return (
     <div
       style={{
         display: 'flex',
+        flexWrap: wrap ? 'wrap' : undefined,
         background: 'var(--mt-bg-secondary)',
         border: '1px solid var(--mt-border)',
         borderRadius: 'var(--mt-radius-md)',
         padding: 2,
+        gap: wrap ? 2 : undefined,
       }}
     >
       {options.map((o) => {

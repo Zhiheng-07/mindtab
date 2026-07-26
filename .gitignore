@@ -15,6 +15,9 @@ dist-ssr
 # Video / large assets
 *.mp4
 
+# UI smoke test artifacts (regenerated on every run)
+screenshots/smoke/
+
 # Environment variables
 .env
 .env.*

@@ -4,7 +4,20 @@
 
 import { STORAGE_KEYS, get, set } from '@/shared/storage'
 
-export type AiProviderId = 'deepseek' | 'openai' | 'kimi' | 'custom'
+export type AiProviderId =
+  | 'deepseek'
+  | 'openai'
+  | 'kimi'
+  | 'qwen'
+  | 'glm'
+  | 'doubao'
+  | 'siliconflow'
+  | 'minimax'
+  | 'stepfun'
+  | 'mimo'
+  | 'claude'
+  | 'openrouter'
+  | 'custom'
 
 export interface AiProviderPreset {
   id: AiProviderId
@@ -33,6 +46,85 @@ export const AI_PROVIDER_PRESETS: AiProviderPreset[] = [
     baseUrl: 'https://api.moonshot.cn/v1',
     defaultModel: 'moonshot-v1-8k',
   },
+  {
+    id: 'qwen',
+    label: '通义千问',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    defaultModel: 'qwen-plus',
+  },
+  {
+    id: 'glm',
+    label: '智谱 GLM',
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    defaultModel: 'glm-4-flash',
+  },
+  {
+    id: 'doubao',
+    label: '豆包 (火山)',
+    baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+    defaultModel: 'doubao-1-5-lite-32k-250115',
+  },
+  {
+    id: 'siliconflow',
+    label: '硅基流动',
+    baseUrl: 'https://api.siliconflow.cn/v1',
+    defaultModel: 'deepseek-ai/DeepSeek-V3',
+  },
+  {
+    id: 'minimax',
+    label: 'MiniMax',
+    baseUrl: 'https://api.minimaxi.com/v1',
+    defaultModel: 'MiniMax-Text-01',
+  },
+  {
+    id: 'stepfun',
+    label: '阶跃星辰',
+    baseUrl: 'https://api.stepfun.com/v1',
+    defaultModel: 'step-2-mini',
+  },
+  {
+    id: 'mimo',
+    label: '小米 MiMo',
+    baseUrl: 'https://api.xiaomimimo.com/v1',
+    defaultModel: 'mimo-v2-flash',
+  },
+  {
+    id: 'claude',
+    label: 'Claude (Anthropic)',
+    baseUrl: 'https://api.anthropic.com/v1',
+    defaultModel: 'claude-3-5-haiku-latest',
+  },
+  {
+    id: 'openrouter',
+    label: 'OpenRouter',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    defaultModel: 'openai/gpt-4o-mini',
+  },
+]
+
+/**
+ * 自定义模式下常用模型建议列表。
+ * 涵盖国内外主流模型产品，用户可在此范围快速选择或手动输入。
+ */
+export const CUSTOM_MODEL_SUGGESTIONS: string[] = [
+  'gpt-4o-mini',
+  'gpt-4o',
+  'gpt-4-turbo',
+  'claude-3-haiku-20240307',
+  'claude-3-5-sonnet-20241022',
+  'deepseek-chat',
+  'deepseek-reasoner',
+  'moonshot-v1-8k',
+  'moonshot-v1-32k',
+  'qwen-turbo',
+  'qwen-plus',
+  'qwen-max',
+  'ernie-3.5-8k',
+  'ernie-4.0-8k',
+  'glm-4-flash',
+  'glm-4-plus',
+  'doubao-pro-32k',
+  'doubao-lite-32k',
 ]
 
 // 用户配置。预设厂商保存时也物化 baseUrl/model（读方无需查预设表），
@@ -61,11 +153,18 @@ export async function isAiConfigured(): Promise<boolean> {
 
 /**
  * 由 baseUrl 解析 /chat/completions 端点。
- * 容错：用户可能把完整端点直接填进 baseUrl。
+ * 容错：
+ * - 用户可能把完整端点直接填进 baseUrl → 直接使用
+ * - 用户可能以 /v1/chat/completions 结尾 → 直接使用
+ * - 否则追加 /chat/completions
  */
 export function resolveChatUrl(baseUrl: string): string {
   const base = baseUrl.trim().replace(/\/+$/, '')
-  if (base.endsWith('/chat/completions')) return base
+  // 如果已包含 chat/completions 路径，直接使用
+  if (/\/chat\/completions$/.test(base)) return base
+  // 如果以 /v1 结尾，追加 chat/completions
+  if (/\/v1$/.test(base)) return `${base}/chat/completions`
+  // 其他情况也追加 chat/completions（兼容自定义路径）
   return `${base}/chat/completions`
 }
 
