@@ -63,8 +63,19 @@ feature **内部**文件互引用**相对路径**（`./db`、`../store`、`../li
 ## 改代码后必做
 
 1. 跑 `npm run build` 确保编译通过
-2. 如果改了 IndexedDB schema，提醒用户**先在测试环境验证**
-3. 如果新增了跨 feature 依赖，提醒用户审查
+2. **UI 改动必须跑 `npm run smoke`**（Puppeteer 真实加载扩展模拟点击 + 截图），
+   并人工查看 `screenshots/smoke/` 截图确认视觉/交互正常后才算完成——
+   仅编译通过不代表可用（历史教训：下拉被蒙层遮挡、悬停失效均通过了编译）
+3. 如果改了 IndexedDB schema，提醒用户**先在测试环境验证**
+4. 如果新增了跨 feature 依赖，提醒用户审查
+5. 完成特性后更新 `docs/progress.md`；重要设计决策写入 `docs/adrs/`
+
+## UI 浮层组件约定（历史踩坑，见 docs/adrs/002）
+
+- 设置模态（zIndex 280）内的任何浮层 z-index ≥ 300（如 `z-[300]`）
+- Radix 弹层组件默认 `modal={true}` 会锁滚动导致背景抖动 → 传 `modal={false}`
+- 实底浮层用 `glass-solid glass-border` class，勿用半透明的 `--mt-bg-primary`
+- 背景色/悬停色一律走 className（inline style 会压死 Tailwind hover: 前缀）
 
 ## 性能与安全注意
 
