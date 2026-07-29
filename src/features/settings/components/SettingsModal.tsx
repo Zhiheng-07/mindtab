@@ -22,18 +22,21 @@ import { Button } from '@/shared/ui/button'
 import { Row, Section, Segmented } from './SettingsPrimitives'
 import { AiSettingsSection } from './AiSettingsSection'
 
-const VERSION = '0.2.4'
+const VERSION = '0.2.5'
 
 interface Props {
   open: boolean
   onClose: () => void
+  /** 打开时自动滚动到 AI 服务区域并聚焦 API Key 输入框 */
+  focusAi?: boolean
 }
 
-export function SettingsModal({ open, onClose }: Props) {
+export function SettingsModal({ open, onClose, focusAi }: Props) {
   const mode = useThemeStore((s) => s.mode)
   const setMode = useThemeStore((s) => s.setMode)
   const pushToast = useToastStore((s) => s.pushToast)
   const confirm = useConfirm()
+  const aiSectionRef = useRef<HTMLDivElement>(null)
 
   const [improve, setImprove] = useState(true)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -55,6 +58,24 @@ export function SettingsModal({ open, onClose }: Props) {
     return () => document.removeEventListener('keydown', esc)
   }, [open, onClose])
 
+  // focusAi：打开时自动滚动到 AI 服务区域并聚焦 API Key 输入框
+  useEffect(() => {
+    if (!focusAi || !open || !aiSectionRef.current) return
+    const el = aiSectionRef.current
+    const scrollTimer = setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 100)
+    // 等滚动完成后聚焦 API Key 输入框
+    const focusTimer = setTimeout(() => {
+      const input = el.querySelector('input[type="password"]')
+      if (input instanceof HTMLElement) input.focus()
+    }, 400)
+    return () => {
+      clearTimeout(scrollTimer)
+      clearTimeout(focusTimer)
+    }
+  }, [focusAi, open])
+
   const handleClearAll = async () => {
     const ok = await confirm({
       title: '清空所有数据？',
@@ -68,9 +89,9 @@ export function SettingsModal({ open, onClose }: Props) {
       await clearAllData()
       await useBookmarkStore.getState().hydrate()
       await usePendingStore.getState().hydratePending()
-      pushToast('success', '已清空所有数据')
+      pushToast('success', '已清空所有数据', 'clear-all')
     } catch (e) {
-      pushToast('error', `清空失败：${(e as Error).message}`)
+      pushToast('error', `清空失败：${(e as Error).message}`, 'clear-fail')
     }
   }
 
@@ -84,13 +105,13 @@ export function SettingsModal({ open, onClose }: Props) {
     try {
       const items = await getPendingIndexBookmarks()
       if (items.length === 0) {
-        pushToast('info', '所有书签均已索引')
+        pushToast('info', '所有书签均已索引', 'reindex-none')
         return
       }
       await chrome.runtime.sendMessage({ type: MSG.retryIndex })
-      pushToast('success', `已发起 ${items.length} 条重新索引`)
+      pushToast('success', `已发起 ${items.length} 条重新索引`, 'reindex-start')
     } catch (e) {
-      pushToast('error', `重新索引失败：${(e as Error).message}`)
+      pushToast('error', `重新索引失败：${(e as Error).message}`, 'reindex-fail')
     } finally {
       setReindexBusy(false)
     }
@@ -108,14 +129,15 @@ export function SettingsModal({ open, onClose }: Props) {
         pushToast(
           'success',
           `导入：新增 ${result.written} 条，重新归类 ${result.reassigned}`,
+          'import-html'
         )
       } else if (result.skipped > 0) {
-        pushToast('info', `全部跳过：${result.skipped} 条已存在`)
+        pushToast('info', `全部跳过：${result.skipped} 条已存在`, 'import-html')
       } else {
-        pushToast('error', '未解析到可导入条目')
+        pushToast('error', '未解析到可导入条目', 'import-no-items')
       }
     } catch (e) {
-      pushToast('error', `导入失败：${(e as Error).message}`)
+      pushToast('error', `导入失败：${(e as Error).message}`, 'import-fail')
     } finally {
       setImportBusy(false)
     }
@@ -126,12 +148,12 @@ export function SettingsModal({ open, onClose }: Props) {
     try {
       const count = await exportBookmarksHtml()
       if (count > 0) {
-        pushToast('success', `已导出 ${count} 条书签`)
+        pushToast('success', `已导出 ${count} 条书签`, 'export-ok')
       } else {
-        pushToast('info', '暂无书签可导出')
+        pushToast('info', '暂无书签可导出', 'export-none')
       }
     } catch (e) {
-      pushToast('error', `导出失败：${(e as Error).message}`)
+      pushToast('error', `导出失败：${(e as Error).message}`, 'export-fail')
     } finally {
       setExportBusy(false)
     }
@@ -223,7 +245,9 @@ export function SettingsModal({ open, onClose }: Props) {
               </Section>
 
               {/* ── AI 服务 ── */}
-              <AiSettingsSection />
+              <div ref={aiSectionRef}>
+                <AiSettingsSection />
+              </div>
 
               {/* ── 数据 ── */}
               <Section title="数据管理">

@@ -44,6 +44,7 @@
 
   --mt-error:            #EF4444;
   --mt-warning:          #F59E0B;
+  --mt-bg-warning:       rgba(245, 158, 11, 0.08);
   --mt-success:          #16A34A;
 
   /* Phase 8: radius shifted up for glass era */

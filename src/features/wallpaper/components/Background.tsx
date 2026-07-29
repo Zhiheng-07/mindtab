@@ -99,8 +99,15 @@ function VideoLayer({ remoteUrl, active, objectFit, transform }: VideoLayerProps
   const ref = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<Hls | null>(null)
 
+  // 惰性加载：首次 active 时才开始下载源，之后保持已加载（主题互切不重载）
+  const [loadRequested, setLoadRequested] = useState(active)
+  useEffect(() => {
+    if (active) setLoadRequested(true)
+  }, [active])
+
   // 加载视频源（优先缓存 → 远程 → 后台静默缓存）
   useEffect(() => {
+    if (!loadRequested) return
     const video = ref.current
     if (!video) return
     let revoke: string | null = null
@@ -133,7 +140,7 @@ function VideoLayer({ remoteUrl, active, objectFit, transform }: VideoLayerProps
       }
       if (revoke) URL.revokeObjectURL(revoke)
     }
-  }, [remoteUrl])
+  }, [remoteUrl, loadRequested])
 
   // 播放/暂停控制
   useEffect(() => {

@@ -1,9 +1,10 @@
 // 主内容区（从 App.tsx 抽出）。
-// 引导卡片 + 置顶行 + FilterBar + 书签网格 / skeleton。
+// 引导卡片 + AI 未配置横幅 + 置顶行 + FilterBar + 书签网格 / skeleton。
 
-import type { RefObject } from 'react'
+import { useState, type RefObject } from 'react'
 import { SkeletonCard } from '@/shared/ui/Skeleton'
 import type { Bookmark } from '@/shared/db'
+import { useAiConfigured } from '@/shared/lib/aiStatus'
 import {
   BookmarkGrid,
   PinnedRow,
@@ -25,6 +26,7 @@ interface AppMainProps {
   onTogglePin: (id: string) => void
   onDelete: (id: string) => void
   onAddUrl: () => void
+  onOpenSettings: () => void
 }
 
 export function AppMain({
@@ -40,9 +42,20 @@ export function AppMain({
   onTogglePin,
   onDelete,
   onAddUrl,
+  onOpenSettings,
 }: AppMainProps) {
+  const aiConfigured = useAiConfigured()
+  // 横幅 dismiss 只存内存：刷新页面后重新出现
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+
   return (
     <main className="mx-auto max-w-6xl px-6 pt-0 pb-32">
+      {!aiConfigured && !isEmpty && !bannerDismissed && (
+        <AiWarningBanner
+          onClick={onOpenSettings}
+          onClose={() => setBannerDismissed(true)}
+        />
+      )}
       <ImportGuideCard />
       <PinnedRow
         items={pinned}
@@ -84,5 +97,68 @@ export function AppMain({
         )
       )}
     </main>
+  )
+}
+
+function AiWarningBanner({ onClick, onClose }: { onClick: () => void; onClose: () => void }) {
+  return (
+    <div
+      className="glass-border"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        padding: '10px 12px 10px 16px',
+        marginBottom: 12,
+        borderRadius: 'var(--mt-radius-lg)',
+        background: 'var(--mt-bg-warning)',
+        fontSize: 13,
+        color: 'var(--mt-warning)',
+      }}
+    >
+      <span style={{ flex: 1, minWidth: 0 }}>
+        ⚠️ AI 未配置，已跳过智能管理，可在设置中配置 API Key 后自动补齐
+      </span>
+      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+        <button
+          onClick={onClick}
+          style={{
+            background: 'transparent',
+            border: '1px solid currentColor',
+            borderRadius: 'var(--mt-radius-pill)',
+            padding: '3px 12px',
+            fontSize: 12,
+            color: 'inherit',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            transition: 'opacity 120ms ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+        >
+          去配置 →
+        </button>
+        <button
+          onClick={onClose}
+          aria-label="关闭"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'inherit',
+            cursor: 'pointer',
+            padding: '2px 4px',
+            fontSize: 16,
+            lineHeight: 1,
+            opacity: 0.6,
+            transition: 'opacity 120ms ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
+        >
+          ×
+        </button>
+      </div>
+    </div>
   )
 }

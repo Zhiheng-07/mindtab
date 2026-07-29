@@ -55,7 +55,7 @@ export function subscribeRuntimeMessages(): void {
     switch (msg.type) {
       case MSG.pendingAdded:
         debouncedHydratePending()
-        pushToast('success', '已添加到待确认')
+        pushToast('success', '已添加到待确认', 'pending-add')
         break
       case MSG.pendingRemoved:
         debouncedHydratePending()

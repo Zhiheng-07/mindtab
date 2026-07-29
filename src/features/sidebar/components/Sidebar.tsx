@@ -91,9 +91,9 @@ export function Sidebar({ open, onClose }: Props) {
     if (!ok) return
     try {
       await removeFolder(id)
-      pushToast('success', '已删除')
+      pushToast('success', '已删除', 'sidebar-delete')
     } catch (e) {
-      pushToast('error', `删除失败：${(e as Error).message}`)
+      pushToast('error', `删除失败：${(e as Error).message}`, 'sidebar-delete-fail')
     }
   }
 
@@ -102,13 +102,13 @@ export function Sidebar({ open, onClose }: Props) {
     const result = await run(text)
     const reMsg = result.reassigned > 0 ? `，重新归类 ${result.reassigned}` : ''
     if (result.failed === 0 && (result.written > 0 || result.reassigned > 0)) {
-      pushToast('success', `已导入 ${result.written} 条${reMsg}（跳过 ${result.skipped}）`)
+      pushToast('success', `已导入 ${result.written} 条${reMsg}（跳过 ${result.skipped}）`, 'import-html')
     } else if (result.written > 0 || result.reassigned > 0) {
-      pushToast('warning', `成功 ${result.written}${reMsg}，失败 ${result.failed}`)
+      pushToast('warning', `成功 ${result.written}${reMsg}，失败 ${result.failed}`, 'import-html')
     } else if (result.skipped > 0) {
-      pushToast('info', `全部跳过：${result.skipped} 条已存在且分类未变`)
+      pushToast('info', `全部跳过：${result.skipped} 条已存在且分类未变`, 'import-html')
     } else {
-      pushToast('error', '未解析到可导入条目')
+      pushToast('error', '未解析到可导入条目', 'import-no-items')
     }
   }
 
@@ -212,9 +212,9 @@ export function Sidebar({ open, onClose }: Props) {
                 const n = await deleteEmptyFolders()
                 if (n > 0) {
                   await useBookmarkStore.getState().hydrate()
-                  pushToast('success', `已清理 ${n} 个空文件夹`)
+                  pushToast('success', `已清理 ${n} 个空文件夹`, 'folder-clean')
                 } else {
-                  pushToast('info', '没有空文件夹')
+                  pushToast('info', '没有空文件夹', 'folder-clean-none')
                 }
               }}>
                 <IconTrash2 size={14} /> 清理空文件夹
@@ -244,7 +244,7 @@ export function Sidebar({ open, onClose }: Props) {
           try {
             await renameFolder(renameTarget.id, name)
           } catch (e) {
-            pushToast('error', `重命名失败：${(e as Error).message}`)
+            pushToast('error', `重命名失败：${(e as Error).message}`, 'folder-rename-fail')
           }
         }}
       />

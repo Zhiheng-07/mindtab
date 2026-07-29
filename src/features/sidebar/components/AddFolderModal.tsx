@@ -84,10 +84,10 @@ export function AddFolderModal({ open, onClose }: Props) {
     setBusy(true)
     try {
       await addFolder(v)
-      pushToast('success', '已创建')
+      pushToast('success', '已创建', 'folder-create')
       onClose()
     } catch (e) {
-      pushToast('error', `创建失败：${(e as Error).message}`)
+      pushToast('error', `创建失败：${(e as Error).message}`, 'folder-create-fail')
       setBusy(false)
     }
   }

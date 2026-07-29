@@ -131,21 +131,21 @@ export function AiSettingsSection() {
     const baseUrl = effectiveBaseUrl.trim()
     const mdl = model.trim()
     if (!key) {
-      pushToast('error', '请先填写 API Key')
+      pushToast('error', '请先填写 API Key', 'ai-key-empty')
       return null
     }
     if (provider === 'custom' && !baseUrl) {
-      pushToast('error', '请填写 Base URL')
+      pushToast('error', '请填写 Base URL', 'ai-baseurl-empty')
       return null
     }
     if (!mdl) {
-      pushToast('error', '请填写模型名称')
+      pushToast('error', '请填写模型名称', 'ai-model-empty')
       return null
     }
     try {
       void new URL(baseUrl)
     } catch {
-      pushToast('error', 'Base URL 格式无效，请填写完整地址（含 https://）')
+      pushToast('error', 'Base URL 格式无效，请填写完整地址（含 https://）', 'ai-baseurl-invalid')
       return null
     }
     return { provider, apiKey: key, baseUrl, model: mdl }
@@ -210,17 +210,17 @@ export function AiSettingsSection() {
     const key = apiKey.trim()
     const baseUrl = effectiveBaseUrl.trim()
     if (!key) {
-      pushToast('error', '请先填写 API Key')
+      pushToast('error', '请先填写 API Key', 'ai-key-empty')
       return null
     }
     if (!baseUrl) {
-      pushToast('error', '请填写 Base URL')
+      pushToast('error', '请填写 Base URL', 'ai-baseurl-empty')
       return null
     }
     try {
       void new URL(baseUrl)
     } catch {
-      pushToast('error', 'Base URL 格式无效，请填写完整地址（含 https://）')
+      pushToast('error', 'Base URL 格式无效，请填写完整地址（含 https://）', 'ai-baseurl-invalid')
       return null
     }
     return { provider, apiKey: key, baseUrl, model: model.trim() || '' }
@@ -234,7 +234,7 @@ export function AiSettingsSection() {
     ensureHostPermission(draft.baseUrl)
       .then(async (granted) => {
         if (!granted) {
-          pushToast('error', `未授权访问 ${hostOf(draft.baseUrl)} 域名，无法拉取模型列表`)
+          pushToast('error', `未授权访问 ${hostOf(draft.baseUrl)} 域名，无法拉取模型列表`, 'ai-fetch-perm')
           return
         }
         const models = await fetchModels(draft)
@@ -242,10 +242,10 @@ export function AiSettingsSection() {
         // 清空过滤词，立即展示完整拉取结果
         setModelFilter('')
         setShowModelSuggestions(true)
-        pushToast('success', `获取到 ${models.length} 个可用模型`)
+        pushToast('success', `获取到 ${models.length} 个可用模型`, 'ai-fetch-models')
       })
       .catch((e) => {
-        pushToast('error', `获取模型列表失败：${truncateError((e as Error).message)}`)
+        pushToast('error', `获取模型列表失败：${truncateError((e as Error).message)}`, 'ai-fetch-fail')
       })
       .finally(() => setFetchingModels(false))
   }
@@ -258,15 +258,15 @@ export function AiSettingsSection() {
     ensureHostPermission(draft.baseUrl)
       .then(async (granted) => {
         if (!granted) {
-          pushToast('error', `未授权访问 ${hostOf(draft.baseUrl)} 域名，无法调用 AI 服务`)
+          pushToast('error', `未授权访问 ${hostOf(draft.baseUrl)} 域名，无法调用 AI 服务`, 'ai-save-perm')
           return
         }
         await setAiConfig(draft)
         setSaved(draft)
-        pushToast('success', 'AI 配置已保存')
+        pushToast('success', 'AI 配置已保存', 'ai-config-save')
       })
       .catch((e) => {
-        pushToast('error', `保存失败：${truncateError((e as Error).message)}`)
+        pushToast('error', `保存失败：${truncateError((e as Error).message)}`, 'ai-save-fail')
       })
       .finally(() => setSaving(false))
   }

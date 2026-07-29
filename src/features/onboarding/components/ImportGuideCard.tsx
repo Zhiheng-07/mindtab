@@ -36,14 +36,14 @@ export function ImportGuideCard() {
       const html = await file.text()
       const { written, reassigned, skipped } = await run(html)
       if (written > 0) {
-        pushToast('success', `导入：新增 ${written} 条，重新归类 ${reassigned}`)
+        pushToast('success', `导入：新增 ${written} 条，重新归类 ${reassigned}`, 'import-guide')
       } else if (skipped > 0) {
-        pushToast('info', `全部跳过：${skipped} 条已存在`)
+        pushToast('info', `全部跳过：${skipped} 条已存在`, 'import-guide')
       } else {
-        pushToast('error', '未解析到可导入条目')
+        pushToast('error', '未解析到可导入条目', 'import-no-items')
       }
     } catch (e) {
-      pushToast('error', `导入失败：${(e as Error).message}`)
+      pushToast('error', `导入失败：${(e as Error).message}`, 'import-guide-fail')
     } finally {
       void dismiss()
     }
