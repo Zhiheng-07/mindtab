@@ -37,7 +37,7 @@ export function AddUrlModal({ open, onClose }: Props) {
   const submit = async () => {
     const normalized = normalizeUrl(url.trim())
     if (!normalized) {
-      pushToast('warning', '请输入有效的 URL')
+      pushToast('warning', '请输入有效的 URL', 'add-url-invalid')
       return
     }
     setBusy(true)
@@ -47,19 +47,19 @@ export function AddUrlModal({ open, onClose }: Props) {
         payload: { url: normalized, title: title.trim() || undefined },
       })
       if (res?.ok === false) {
-        pushToast('error', res.error ?? '添加失败')
+        pushToast('error', res.error ?? '添加失败', 'add-url-error')
         setBusy(false)
         return
       }
       if (res?.duplicated) {
-        pushToast('info', '该页面已在收藏库中')
+        pushToast('info', '该页面已在收藏库中', 'add-url-dup')
       } else {
-        pushToast('success', '已添加到收藏库')
+        pushToast('success', '已添加到收藏库', 'add-url-ok')
         void useBookmarkStore.getState().hydrate()
       }
       onClose()
     } catch (e) {
-      pushToast('error', `添加失败：${(e as Error).message}`)
+      pushToast('error', `添加失败：${(e as Error).message}`, 'add-url-error')
       setBusy(false)
     }
   }

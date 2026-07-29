@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { DndShell } from '@/shared/dnd'
 import { ConfirmProvider } from '@/shared/ui/ConfirmModal'
 import { TooltipProvider } from '@/shared/ui/tooltip'
+import { refreshAiStatus } from '@/shared/lib/aiStatus'
 import { AddUrlModal, DragPreview, PinnedDragPreview } from '@/features/bookmarks'
 import { PendingPanel } from '@/features/pending'
 import { SearchBar } from '@/features/search'
@@ -20,9 +21,21 @@ export function App() {
   const [addOpen, setAddOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [focusAi, setFocusAi] = useState(false)
   const [privacy, setPrivacy] = useState<PrivacyState>('agreed')
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [showWhatsNew, setShowWhatsNew] = useState(false)
+
+  const onOpenSettings = useCallback(() => {
+    setFocusAi(false)
+    setSettingsOpen(true)
+  }, [])
+
+  const onCloseSettings = useCallback(() => {
+    setSettingsOpen(false)
+    setFocusAi(false)
+    void refreshAiStatus()
+  }, [])
 
   useEffect(() => {
     void getPrivacyState().then((s) => {
@@ -76,7 +89,7 @@ export function App() {
               isEmpty={app.isEmpty}
               allPinned={app.allPinned}
               onOpenSidebar={() => setSidebarOpen(true)}
-              onOpenSettings={() => setSettingsOpen(true)}
+              onOpenSettings={onOpenSettings}
             />
 
             <AppMain
@@ -92,16 +105,17 @@ export function App() {
               onTogglePin={app.togglePinned}
               onDelete={app.remove}
               onAddUrl={() => setAddOpen(true)}
+              onOpenSettings={() => { setFocusAi(true); setSettingsOpen(true) }}
             />
 
             <PendingPanel />
-            {!app.isEmpty && <SearchBar onOpenSettings={() => setSettingsOpen(true)} />}
+            {!app.isEmpty && <SearchBar onOpenSettings={onOpenSettings} />}
 
             <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <Toaster position="top-center" richColors />
+            <Toaster position="top-center" richColors visibleToasts={1} />
             <AddUrlModal open={addOpen} onClose={() => setAddOpen(false)} />
-            <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+            <SettingsModal open={settingsOpen} onClose={onCloseSettings} focusAi={focusAi} />
 
             <WhatsNewModal open={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
 

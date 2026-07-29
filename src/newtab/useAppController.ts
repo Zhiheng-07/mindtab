@@ -45,7 +45,7 @@ export function useAppController() {
     grid: visible,
     onMoveToFolder: (id, folderId) => {
       void moveToFolder(id, folderId).then(() => {
-        pushToast('success', '已移动')
+        pushToast('success', '已移动', 'dnd-moved')
       })
     },
     onReorderPinned: (ids) => {

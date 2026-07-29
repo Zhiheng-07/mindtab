@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Bookmark } from '@/shared/db'
+import { useAiConfigured } from '@/shared/lib/aiStatus'
 import { formatRelativeTime } from '@/shared/lib/timeFormat'
 import { ContextMenu, type ContextMenuItem } from '@/shared/ui/ContextMenu'
 import { Favicon } from '@/shared/ui/Favicon'
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function BookmarkCard({ item, onOpen, onTogglePin, onDelete }: Props) {
+  const aiConfigured = useAiConfigured()
   const [hovered, setHovered] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
@@ -209,13 +211,14 @@ export function BookmarkCard({ item, onOpen, onTogglePin, onDelete }: Props) {
               bottom: 10,
               right: 14,
               fontSize: 11,
-              color:
-                item.indexStatus === 'pending'
+              color: aiConfigured
+                ? item.indexStatus === 'pending'
                   ? 'var(--mt-success)'
-                  : 'var(--mt-text-placeholder)',
+                  : 'var(--mt-text-placeholder)'
+                : 'var(--mt-text-placeholder)',
             }}
           >
-            AI整理中
+            {aiConfigured ? 'AI整理中' : '未配置AI'}
           </span>
         )}
       </article>

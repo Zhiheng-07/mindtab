@@ -26,9 +26,10 @@ export function PendingPanel() {
       await useBookmarkStore.getState().hydrate()
       // 广播给其它打开的 newtab
       broadcast({ type: MSG.bookmarkAdded, payload: { id: bookmark.id } })
-      pushToast('success', '已归入收藏库')
+      broadcast({ type: MSG.pendingRemoved, payload: { id } })
+      pushToast('success', '已归入收藏库', 'pending-confirm')
     } catch (e) {
-      pushToast('error', `归入失败：${(e as Error).message}`)
+      pushToast('error', `归入失败：${(e as Error).message}`, 'pending-confirm-fail')
     }
   }
 

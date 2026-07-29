@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { IndexStatus, PendingBookmark } from '@/shared/db'
+import { useAiConfigured } from '@/shared/lib/aiStatus'
 import { Favicon } from '@/shared/ui/Favicon'
 import { IconCheck, IconClose, IconEdit } from '@/shared/ui/icons'
 const MAX_TITLE = 20
@@ -110,12 +111,21 @@ export function PendingCard({ item, onRename, onDelete, onConfirm }: Props) {
 }
 
 function IndexBadge({ status }: { status: IndexStatus }) {
+  const aiConfigured = useAiConfigured()
   if (status === 'done') return <span />
   const color =
-    status === 'pending' ? 'var(--mt-success)' : 'var(--mt-text-placeholder)'
+    status === 'pending' && !aiConfigured
+      ? 'var(--mt-text-placeholder)'
+      : status === 'pending'
+        ? 'var(--mt-success)'
+        : 'var(--mt-text-placeholder)'
   return (
     <span style={{ fontSize: 11, color }}>
-      {status === 'pending' ? 'AI整理中' : '索引中'}
+      {status === 'pending' && !aiConfigured
+        ? '未配置AI'
+        : status === 'pending'
+          ? 'AI整理中'
+          : '索引中'}
     </span>
   )
 }
