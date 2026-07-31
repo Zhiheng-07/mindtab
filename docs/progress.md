@@ -7,16 +7,20 @@
 
 ## 当前焦点
 
-- v0.2.6 搜索架构改造（本地粗筛 + LLM 精排 + 两阶段交互）：实现 + 37 条单测完成，版本号已 bump，待手测验收后发版
+- v0.2.6 已发版（2026-07-31），观察期：自用验证 + 关注 GitHub Issues
 
 ## 待办
 
-- v0.2.6 手测验收：真实 key 下用《02 · AI能力说明》验收项四的 10 条召回样本验证（≥80% 合格）
-- （暂无排期）GitHub Actions CI 流水线：push 时自动跑 build + smoke
+- lint 存量 24 个 error 清理（shared/ui、Favicon、SearchModal 等历史问题），清完后 lint 纳入 CI
 - （待定）商店版（mindtab-extension-store）同步本期改动的评估
 - （待议）向量粗筛扩展：书签量 >1000 或纯语义查询失败率明显时启动，见 ADR-003
 
 ## 已完成
+
+### 2026-07-31 · V0.2.6 发版
+
+- PR #2（CI 首跑通过，28s）→ squash merge → tag `v0.2.6` → [GitHub Release](https://github.com/Zhiheng-07/mindtab/releases/tag/v0.2.6) 挂 `mindtab-v0.2.6.zip`（488K）
+- 新增 GitHub Actions CI（`.github/workflows/ci.yml`：push main / PR 自动 build + test）
 
 ### 2026-07-31 · V0.2.6 收尾：单元测试体系 + 版本号 bump
 
