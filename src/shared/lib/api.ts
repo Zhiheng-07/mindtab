@@ -13,7 +13,10 @@ import {
   parseSearchResponse,
   TEMP_INDEX,
   TEMP_SEARCH,
+  type SearchCandidate,
 } from './aiPrompts'
+
+export type { SearchCandidate }
 
 export interface IndexResult {
   summary: string
@@ -62,13 +65,27 @@ export async function indexBookmarkBatch(
   return parseBatchResponse(raw)
 }
 
+/** LLM 精排：candidates 为调用方粗筛后的候选（含相对天数）。
+ * prompt 内用序号指代候选，此处把模型返回的序号映射回真实书签 id。 */
 export async function searchBookmarks(
   query: string,
-  bookmarks: { id: string; title: string; domain: string; summary: string; tags: string[] }[],
+  candidates: SearchCandidate[],
 ): Promise<SearchHit[]> {
   const raw = await chatComplete({
-    messages: buildSearchMessages(query, bookmarks),
+    messages: buildSearchMessages(query, candidates),
     temperature: TEMP_SEARCH,
   })
-  return parseSearchResponse(raw)
+  const knownIds = new Set(candidates.map((c) => c.id))
+  const hits: SearchHit[] = []
+  for (const h of parseSearchResponse(raw)) {
+    // 序号优先（新格式）；越界丢弃。旧 id 形状仅在确属候选集时接受
+    const id =
+      h.index !== undefined && h.index < candidates.length
+        ? candidates[h.index].id
+        : h.id !== undefined && knownIds.has(h.id)
+          ? h.id
+          : null
+    if (id !== null) hits.push({ id, score: h.score, reason: h.reason })
+  }
+  return hits
 }

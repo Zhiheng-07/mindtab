@@ -1,0 +1,30 @@
+# CI：push main / PR 时自动跑 build + 单元测试。
+# 不含 lint（存量 24 个历史 error 待清理后再纳入）；
+# 不含 smoke（Puppeteer 需真实显示环境，保留为本地发版前手动步骤）。
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建
+        run: npm run build
+
+      - name: 单元测试
+        run: npm test

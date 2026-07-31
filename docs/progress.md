@@ -7,14 +7,32 @@
 
 ## 当前焦点
 
-- v0.2.4 发版（AI 服务绑定重构 + 首页动效优化）
+- v0.2.6 搜索架构改造（本地粗筛 + LLM 精排 + 两阶段交互）：实现 + 37 条单测完成，版本号已 bump，待手测验收后发版
 
 ## 待办
 
+- v0.2.6 手测验收：真实 key 下用《02 · AI能力说明》验收项四的 10 条召回样本验证（≥80% 合格）
 - （暂无排期）GitHub Actions CI 流水线：push 时自动跑 build + smoke
 - （待定）商店版（mindtab-extension-store）同步本期改动的评估
+- （待议）向量粗筛扩展：书签量 >1000 或纯语义查询失败率明显时启动，见 ADR-003
 
 ## 已完成
+
+### 2026-07-31 · V0.2.6 收尾：单元测试体系 + 版本号 bump
+
+- 新增 vitest 测试体系：`tests/` 文件夹 + `vitest.config.ts`（独立配置不加载 crx 插件），`npm test`
+- 37 条用例全部通过：localIndex（分词/加权/frecency/adaptive/粗筛边界 14 条）、aiPrompts（格式/截断/抗注入/双形状解析 11 条）、searchApi（序号映射 4 条，mock 网络层）、frecency（衰减/过期 8 条，chrome.storage 内存 stub）
+- 版本号三处 bump 0.2.5 → 0.2.6；发布记录草稿 `../版本记录/LATEST_RELEASE_V0.2.6.md`
+
+### 2026-07-30 · V0.2.6 搜索架构改造（待发版）
+
+- 根因修复「AI 搜索慢」：LLM 不再通读全量书签（≤500 条 JSON，数万 token），改为本地粗筛 top 50 后精排（紧凑序号行格式，~3k token），prompt 与 token 成本降一个数量级
+- 新增本地索引层 `features/search/lib/localIndex.ts`：MiniSearch（唯一新依赖，~6KB）+ `Intl.Segmenter('zh')` 分词 + CJK bigram 双通道，中文降级搜索从「整句 includes」质变为可用
+- 两阶段交互：输入防抖 250ms 即出本地结果（可点击）；回车 AI 精排异步替换，等待期不再整屏 Skeleton；seq 守卫防连搜竞态；↑↓ 方向键导航
+- 排序增强 `features/search/lib/frecency.ts`：frecency（30 天半衰期指数衰减）+ adaptive history（同词再搜置顶上次选中）
+- 召回 prompt 对齐《02 · AI能力说明》定稿：补回抗注入安全规则、恢复 match_reason 对话语气，新增类型/时间意图理解
+- 冒烟扩展：搜索段（预置书签 → 即时结果断言 → 降级链路断言），`npm run smoke` 全绿
+- 技术方案留底：`../版本记录/TECH_PLAN_V0.2.6_搜索架构改造.md`；向量层决策见 [ADR-003](adrs/003-search-local-recall-llm-rerank.md)
 
 ### 2026-07-26 · AI 服务绑定流程重构（`374e788`）
 

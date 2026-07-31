@@ -1,18 +1,25 @@
+import { useState } from 'react'
 import type { SearchResultItem } from '../hooks/useSearch'
 import { Favicon } from '@/shared/ui/Favicon'
 
 interface Props {
   item: SearchResultItem
   onSelect: () => void
+  /** 键盘 ↑↓ 选中态，与 hover 同款视觉 */
+  selected?: boolean
 }
 
-export function SearchResult({ item, onSelect }: Props) {
+export function SearchResult({ item, onSelect, selected = false }: Props) {
   const { bookmark: b, reason } = item
+  const [hovered, setHovered] = useState(false)
+  const hot = hovered || selected
 
   return (
     <button
       onClick={onSelect}
       className="glass-border"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         width: '100%',
         borderRadius: 'var(--mt-radius-lg)',
@@ -22,22 +29,11 @@ export function SearchResult({ item, onSelect }: Props) {
         display: 'flex',
         gap: 10,
         alignItems: 'flex-start',
-        boxShadow: 'none',
-        background: 'var(--mt-search-result-bg)',
-        backdropFilter: 'none',
+        borderColor: hot ? 'var(--mt-border-hover)' : undefined,
+        boxShadow: hot ? 'var(--mt-search-result-shadow)' : 'none',
+        background: hot ? 'var(--mt-search-result-bg-hover)' : 'var(--mt-search-result-bg)',
+        backdropFilter: hot ? 'blur(7px) saturate(1.4)' : 'none',
         transition: 'border-color 150ms ease, box-shadow 150ms ease, background 150ms ease, backdrop-filter 150ms ease',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = 'var(--mt-border-hover)'
-        e.currentTarget.style.boxShadow = 'var(--mt-search-result-shadow)'
-        e.currentTarget.style.background = 'var(--mt-search-result-bg-hover)'
-        e.currentTarget.style.backdropFilter = 'blur(7px) saturate(1.4)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = 'var(--mt-glass-border)'
-        e.currentTarget.style.boxShadow = 'none'
-        e.currentTarget.style.background = 'var(--mt-search-result-bg)'
-        e.currentTarget.style.backdropFilter = 'none'
       }}
     >
       <span style={{ marginTop: 1 }}>

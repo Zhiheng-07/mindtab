@@ -6,6 +6,9 @@ export const STORAGE_KEYS = {
   privacyAgreed: 'mt:privacyAgreed',
   importGuideShown: 'mt:importGuideShown',
   searchHistory: 'mt:searchHistory',
+  // 搜索排序增强：frecency（书签打开频次+新近度）与 adaptive（查询词→上次选中）
+  searchFrecency: 'mt:searchFrecency',
+  searchAdaptive: 'mt:searchAdaptive',
   improveProduct: 'mt:improveProduct',
   lastSeenVersion: 'mt:lastSeenVersion',
   // AI 直连配置（provider/apiKey/baseUrl/model），单 key 存整个对象，保证原子读写
