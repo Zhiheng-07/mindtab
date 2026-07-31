@@ -7,15 +7,22 @@
 
 ## 当前焦点
 
-- v0.2.6 已发版（2026-07-31），观察期：自用验证 + 关注 GitHub Issues
+- v0.2.7 已发版（2026-07-31），观察期：自用验证 + 关注 GitHub Issues
 
 ## 待办
 
-- WhatsNewModal 的 `CURRENT_VERSION` 仍为 '0.2.3'（0.2.4 起更新弹窗从未触发）：待决策是否随下版更新文案并 bump（在 `lib/whatsNew.ts`）
 - （待定）商店版（mindtab-extension-store）同步本期改动的评估
 - （待议）向量粗筛扩展：书签量 >1000 或纯语义查询失败率明显时启动，见 ADR-003
 
 ## 已完成
+
+### 2026-07-31 · V0.2.7 发版：版本更新弹窗补发（PR #4）
+
+- 修复 `CURRENT_VERSION` 停在 '0.2.3' 导致 0.2.4~0.2.6 更新弹窗从未触发；合并三版亮点为一个弹窗补发（🔍 搜索全面升级 / 🔑 AI 服务自主绑定 / ✨ 体验细节优化）
+- 版本号 bump 0.2.6 → 0.2.7（package.json / manifest.json / SettingsModal.tsx）
+- 发版 SOP 规则化：版本号 bump 三处 → 四处（含 `whatsNew.ts`），「发版必须更新弹窗」写入项目级规则
+- 验证：build / lint 0 / 37 条单测 / smoke 全绿；Puppeteer 真实模拟老用户升级链路（弹一次 → 确认后不再弹）截图人工核对
+- PR #4 → CI 绿 → squash merge → tag `v0.2.7` → [GitHub Release](https://github.com/Zhiheng-07/mindtab/releases/tag/v0.2.7) 挂 `mindtab-v0.2.7.zip`
 
 ### 2026-07-31 · lint 清债（PR #3）
 
