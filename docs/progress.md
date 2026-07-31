@@ -11,11 +11,17 @@
 
 ## 待办
 
-- lint 存量 24 个 error 清理（shared/ui、Favicon、SearchModal 等历史问题），清完后 lint 纳入 CI
+- WhatsNewModal 的 `CURRENT_VERSION` 仍为 '0.2.3'（0.2.4 起更新弹窗从未触发）：待决策是否随下版更新文案并 bump（在 `lib/whatsNew.ts`）
 - （待定）商店版（mindtab-extension-store）同步本期改动的评估
 - （待议）向量粗筛扩展：书签量 >1000 或纯语义查询失败率明显时启动，见 ADR-003
 
 ## 已完成
+
+### 2026-07-31 · lint 清债（PR #3）
+
+- 23 error + 3 warning → **0**：模态重置改「渲染期间调整状态」、Background 用 `useEffectEvent`（避免主题切换重建视频源）、flyout 锚点事件时捕获、shadcn variants / useConfirm / onboarding 存储拆出组件文件、删除死代码 SearchModal
+- `npm run lint` 纳入 CI（build + lint + test 三关守门）
+- 12 个逻辑单元提交 squash 合并；smoke 全绿无视觉回归
 
 ### 2026-07-31 · V0.2.6 发版
 
