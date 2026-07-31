@@ -38,7 +38,9 @@ export function FolderTreeItem({
   onDelete,
   depth = 0,
 }: Props) {
-  const [flyout, setFlyout] = useState(false)
+  // flyout 锚点在打开定时器回调（事件上下文）里捕获，渲染期不读 ref
+  const [flyoutAnchor, setFlyoutAnchor] = useState<DOMRect | null>(null)
+  const flyout = flyoutAnchor !== null
   const [hovered, setHovered] = useState(false)
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const openTimer = useRef<number | undefined>(undefined)
@@ -68,12 +70,15 @@ export function FolderTreeItem({
     if (!hasChildren) return
     cancelClose()
     cancelOpen()
-    openTimer.current = setTimeout(() => setFlyout(true), HOVER_OPEN_DELAY) as unknown as number
+    openTimer.current = setTimeout(() => {
+      const el = itemRef.current
+      if (el) setFlyoutAnchor(el.getBoundingClientRect())
+    }, HOVER_OPEN_DELAY) as unknown as number
   }
   const scheduleClose = () => {
     cancelOpen()
     cancelClose()
-    closeTimer.current = setTimeout(() => setFlyout(false), HOVER_CLOSE_DELAY) as unknown as number
+    closeTimer.current = setTimeout(() => setFlyoutAnchor(null), HOVER_CLOSE_DELAY) as unknown as number
   }
 
   useEffect(
@@ -152,10 +157,10 @@ export function FolderTreeItem({
         <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
       )}
 
-      {flyout && hasChildren && itemRef.current &&
+      {flyoutAnchor && hasChildren &&
         createPortal(
           <Flyout
-            anchor={itemRef.current.getBoundingClientRect()}
+            anchor={flyoutAnchor}
             onMouseEnter={() => {
               cancelClose()
             }}
