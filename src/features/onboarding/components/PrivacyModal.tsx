@@ -10,13 +10,6 @@ import {
 } from '@/shared/ui/dialog'
 import { Button } from '@/shared/ui/button'
 import { cn } from '@/shared/lib/utils'
-import {
-  get as storageGet,
-  set as storageSet,
-  STORAGE_KEYS,
-} from '@/shared/storage'
-
-export type PrivacyState = 'unknown' | 'agreed' | 'dismissed'
 
 interface Props {
   open: boolean
@@ -140,11 +133,3 @@ function Collapsible({
   )
 }
 
-export async function getPrivacyState(): Promise<PrivacyState> {
-  const v = await storageGet<PrivacyState>(STORAGE_KEYS.privacyAgreed as string, 'unknown')
-  return v ?? 'unknown'
-}
-
-export async function setPrivacyState(s: PrivacyState): Promise<void> {
-  await storageSet(STORAGE_KEYS.privacyAgreed as string, s)
-}

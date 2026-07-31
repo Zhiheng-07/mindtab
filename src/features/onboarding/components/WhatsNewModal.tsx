@@ -5,13 +5,8 @@ import {
   DialogTitle,
 } from '@/shared/ui/dialog'
 import { Button } from '@/shared/ui/button'
-import {
-  get as storageGet,
-  set as storageSet,
-  STORAGE_KEYS,
-} from '@/shared/storage'
-
-const CURRENT_VERSION = '0.2.3'
+import { set as storageSet, STORAGE_KEYS } from '@/shared/storage'
+import { CURRENT_VERSION } from '../lib/whatsNew'
 
 interface UpdateItem {
   emoji: string
@@ -77,13 +72,3 @@ export function WhatsNewModal({ open, onClose }: Props) {
   )
 }
 
-export async function shouldShowWhatsNew(): Promise<boolean> {
-  const seen = await storageGet<string>(STORAGE_KEYS.lastSeenVersion, '')
-  if (!seen) {
-    // 新用户首次安装：静默初始化为当前版本，不弹更新弹窗
-    // （他们没经历过旧版本，看「迁移」类文案会困惑）
-    await storageSet(STORAGE_KEYS.lastSeenVersion, CURRENT_VERSION)
-    return false
-  }
-  return seen !== CURRENT_VERSION
-}
