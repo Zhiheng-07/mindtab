@@ -42,13 +42,20 @@ export function RenameFolderModal({ open, initial, onClose, onSubmit }: Props) {
   const overLimit = width > WIDTH_MAX
   const showError = touched && overLimit
 
-  useEffect(() => {
+  // 打开或 initial 变化时重置（渲染期间调整状态，保留原 [open, initial] deps 语义）；
+  // timer 清理留在无 setState 的 effect 里
+  const [prev, setPrev] = useState({ open, initial })
+  if (open !== prev.open || initial !== prev.initial) {
+    setPrev({ open, initial })
     if (open) {
       setName(initial)
       setTouched(false)
       setShaking(false)
-      if (timerRef.current) clearTimeout(timerRef.current)
     }
+  }
+
+  useEffect(() => {
+    if (open && timerRef.current) clearTimeout(timerRef.current)
   }, [open, initial])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

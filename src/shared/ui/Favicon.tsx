@@ -2,7 +2,7 @@
 // 展示层 img 稳定不变，探测层 img 隐藏加载。
 // 新图加载成功后才更新展示层，用户永远不会看到闪动或碎图。
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { faviconCandidates, isGenericFavicon } from '@/shared/lib/favicon'
 import { faviconServiceCandidates } from '@/shared/lib/faviconDiscovery'
 import { FAVICON_MAP } from '@/shared/lib/faviconMap'
@@ -47,9 +47,12 @@ export function Favicon({ src, domain, title, size, rounded = false }: Props) {
   const currentSrc = tryIndex < candidates.length ? candidates[tryIndex] : null
 
   // src/domain 变化时（如 server 发现新 URL）→ 重新探测，但不清 loadedSrc
-  useEffect(() => {
+  // （渲染期间调整状态，替代 effect 重置）
+  const [prevProbe, setPrevProbe] = useState({ src, domain })
+  if (prevProbe.src !== src || prevProbe.domain !== domain) {
+    setPrevProbe({ src, domain })
     setTryIndex(0)
-  }, [src, domain])
+  }
 
   const handleProbeLoad = useCallback(() => {
     setLoadedSrc(currentSrc)

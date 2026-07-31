@@ -4,7 +4,7 @@ import { LottieMenuIcon } from './LottieMenuIcon'
 import { IconPlusSquare, IconDownload, IconTrash2 } from '@/shared/ui/icons'
 import { ScrollArea } from '@/shared/ui/scroll-area'
 import { Separator } from '@/shared/ui/separator'
-import { useConfirm } from '@/shared/ui/ConfirmModal'
+import { useConfirm } from '@/shared/ui/useConfirm'
 import {
   countByFolder,
   useBookmarkStore,

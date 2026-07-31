@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Loader2, X } from 'lucide-react'
 import { useSearch, type SearchPhase } from '../hooks/useSearch'
 import { touchOpened } from '@/features/bookmarks/db'
@@ -45,20 +45,22 @@ export function SearchBar({ onOpenSettings }: { onOpenSettings?: () => void }) {
     refreshHistory,
   } = useSearch()
 
-  const clearPreviewTimer = () => {
+  // useCallback 稳定引用：activate/deactivate 进键盘监听 effect 的 deps，
+  // 依赖链（primeIndex/refreshHistory/reset）在 useSearch 内均为稳定 useCallback
+  const clearPreviewTimer = useCallback(() => {
     if (debounceRef.current !== null) {
       clearTimeout(debounceRef.current)
       debounceRef.current = null
     }
-  }
+  }, [])
 
-  const activate = () => {
+  const activate = useCallback(() => {
     setActive(true)
     primeIndex()
     void refreshHistory()
-  }
+  }, [primeIndex, refreshHistory])
 
-  const deactivate = () => {
+  const deactivate = useCallback(() => {
     clearPreviewTimer()
     setActive(false)
     setHovered(false)
@@ -66,7 +68,7 @@ export function SearchBar({ onOpenSettings }: { onOpenSettings?: () => void }) {
     setAlertDismissed(false)
     setSelectedIdx(-1)
     reset()
-  }
+  }, [clearPreviewTimer, reset])
 
   const onInputChange = (value: string) => {
     setQuery(value)
@@ -75,7 +77,7 @@ export function SearchBar({ onOpenSettings }: { onOpenSettings?: () => void }) {
     debounceRef.current = window.setTimeout(() => previewLocal(value), PREVIEW_DEBOUNCE)
   }
 
-  useEffect(() => clearPreviewTimer, [])
+  useEffect(() => clearPreviewTimer, [clearPreviewTimer])
 
   useEffect(() => {
     if (active) {
@@ -96,7 +98,7 @@ export function SearchBar({ onOpenSettings }: { onOpenSettings?: () => void }) {
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [active])
+  }, [active, activate, deactivate])
 
   const submit = (q: string) => {
     clearPreviewTimer()

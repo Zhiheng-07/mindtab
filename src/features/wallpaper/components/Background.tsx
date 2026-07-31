@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import Hls from 'hls.js'
 import { getVideoUrl } from '../lib/videoCache'
 import { getTheme, DEFAULT_THEME_ID, type VideoTheme } from '../lib/videoThemes'
 
 export function Background() {
   const [isDark, setIsDark] = useState(false)
-  // 后续设置面板切换主题时调用 setTheme
-  const [theme, _setTheme] = useState<VideoTheme>(() => getTheme(DEFAULT_THEME_ID))
+  // 后续设置面板支持切换主题时，再补回 setter
+  const [theme] = useState<VideoTheme>(() => getTheme(DEFAULT_THEME_ID))
 
   useEffect(() => {
     const check = () => {
@@ -100,10 +100,15 @@ function VideoLayer({ remoteUrl, active, objectFit, transform }: VideoLayerProps
   const hlsRef = useRef<Hls | null>(null)
 
   // 惰性加载：首次 active 时才开始下载源，之后保持已加载（主题互切不重载）
+  // latch 用渲染期间调整状态实现，替代 effect 里的同步 setState
   const [loadRequested, setLoadRequested] = useState(active)
-  useEffect(() => {
-    if (active) setLoadRequested(true)
-  }, [active])
+  if (active && !loadRequested) setLoadRequested(true)
+
+  // 加载完成时若应播放则立即播放：Effect Event 读最新 active，
+  // 不进加载 effect 的 deps——active 进 deps 会导致主题切换时销毁重建视频源
+  const startIfActive = useEffectEvent((video: HTMLVideoElement) => {
+    if (active) video.play().catch(() => {})
+  })
 
   // 加载视频源（优先缓存 → 远程 → 后台静默缓存）
   useEffect(() => {
@@ -130,7 +135,7 @@ function VideoLayer({ remoteUrl, active, objectFit, transform }: VideoLayerProps
       }
 
       // 如果当前应该播放，立即开始
-      if (active) video.play().catch(() => {})
+      startIfActive(video)
     })()
 
     return () => {

@@ -1,5 +1,5 @@
 // 首次安装的隐私授权弹窗（shadcn Dialog 实现）
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import {
   Dialog,
@@ -10,13 +10,6 @@ import {
 } from '@/shared/ui/dialog'
 import { Button } from '@/shared/ui/button'
 import { cn } from '@/shared/lib/utils'
-import {
-  get as storageGet,
-  set as storageSet,
-  STORAGE_KEYS,
-} from '@/shared/storage'
-
-export type PrivacyState = 'unknown' | 'agreed' | 'dismissed'
 
 interface Props {
   open: boolean
@@ -29,13 +22,16 @@ export function PrivacyModal({ open, onAgree, onDismiss }: Props) {
   const [privacyExpanded, setPrivacyExpanded] = useState(false)
   const [termsExpanded, setTermsExpanded] = useState(false)
 
-  useEffect(() => {
+  // 关闭时重置（渲染期间调整状态，替代 effect 重置）
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (!open) {
       setAgreed(true)
       setPrivacyExpanded(false)
       setTermsExpanded(false)
     }
-  }, [open])
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onDismiss()}>
@@ -137,11 +133,3 @@ function Collapsible({
   )
 }
 
-export async function getPrivacyState(): Promise<PrivacyState> {
-  const v = await storageGet<PrivacyState>(STORAGE_KEYS.privacyAgreed as string, 'unknown')
-  return v ?? 'unknown'
-}
-
-export async function setPrivacyState(s: PrivacyState): Promise<void> {
-  await storageSet(STORAGE_KEYS.privacyAgreed as string, s)
-}

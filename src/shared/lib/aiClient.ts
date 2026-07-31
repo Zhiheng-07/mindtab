@@ -195,7 +195,7 @@ export async function fetchModels(draft: AiConfig): Promise<string[]> {
     return data.data.map((m) => m.id).sort()
   } catch (e) {
     if ((e as Error).name === 'AbortError') {
-      throw new Error('拉取模型列表超时，请检查网络或 Base URL')
+      throw new Error('拉取模型列表超时，请检查网络或 Base URL', { cause: e })
     }
     throw e
   } finally {

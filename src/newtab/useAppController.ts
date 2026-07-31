@@ -58,17 +58,12 @@ export function useAppController() {
   })
 
   // filterPinned 控制 header 中 compact FilterBar 的显示
-  // 依赖 isEmpty + allPinned：确保 FilterBar 挂载/卸载后重新绑定滚动监听
+  // 依赖 isEmpty + allPinned：确保 FilterBar 挂载/卸载后重新绑定滚动监听。
+  // 空态/全置顶下的强制 false 由返回值派生表达（不在 effect 里同步 setState）
   useEffect(() => {
-    if (isEmpty || allPinned) {
-      setFilterPinned(false)
-      return
-    }
+    if (isEmpty || allPinned) return
     const el = filterBarRef.current
-    if (!el) {
-      setFilterPinned(false)
-      return
-    }
+    if (!el) return
     const onScroll = () => {
       const rect = el.getBoundingClientRect()
       // 滞回带（76/84）：pin 与 unpin 阈值分开，避免在临界点来回滚动时抖动
@@ -78,9 +73,15 @@ export function useAppController() {
         return rect.bottom < 76
       })
     }
+    // 重新绑定后的首判不带滞回（等价旧实现「先重置 false 再按 76 判定」）
+    const raf = requestAnimationFrame(() => {
+      setFilterPinned(el.getBoundingClientRect().bottom < 76)
+    })
     window.addEventListener('scroll', onScroll, { passive: true })
-    requestAnimationFrame(() => onScroll())
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [isEmpty, allPinned])
 
   const openBookmark = (b: { id: string; url: string }) => {
@@ -104,7 +105,7 @@ export function useAppController() {
     allPinned,
     pinned,
     visible,
-    filterPinned,
+    filterPinned: filterPinned && !isEmpty && !allPinned,
     filterBarRef,
     scopeLabel,
     // 书签操作
