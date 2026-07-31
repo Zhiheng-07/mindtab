@@ -26,8 +26,10 @@ export function LottieMenuIcon({ open, size = 16 }: Props) {
 
     // 始终从 hamburger 状态开始
     anim.goToAndStop(0, true)
-    // 如果 open=true（侧导栏正在打开），播放 hamburger→X
-    if (open) {
+    // 如果挂载时侧导栏正在打开，播放 hamburger→X
+    // （读 prevOpen ref 而非 open prop：本 effect 只关心挂载时刻的初始值，
+    //  挂载时 prevOpen.current === open，语义等价且无需把 open 加入 deps）
+    if (prevOpen.current) {
       anim.setDirection(1)
       anim.play()
     }
