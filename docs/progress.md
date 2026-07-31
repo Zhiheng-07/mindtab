@@ -39,7 +39,7 @@
 
 - 新增 vitest 测试体系：`tests/` 文件夹 + `vitest.config.ts`（独立配置不加载 crx 插件），`npm test`
 - 37 条用例全部通过：localIndex（分词/加权/frecency/adaptive/粗筛边界 14 条）、aiPrompts（格式/截断/抗注入/双形状解析 11 条）、searchApi（序号映射 4 条，mock 网络层）、frecency（衰减/过期 8 条，chrome.storage 内存 stub）
-- 版本号三处 bump 0.2.5 → 0.2.6；发布记录草稿 `../版本记录/LATEST_RELEASE_V0.2.6.md`
+- 版本号三处 bump 0.2.5 → 0.2.6；发布记录草稿 `../版本记录/RELEASE_V0.2.6.md`
 
 ### 2026-07-30 · V0.2.6 搜索架构改造（待发版）
 
@@ -65,6 +65,10 @@
 - Apple 风格强减速曲线 `cubic-bezier(0.16, 1, 0.3, 1)`，吸顶 280ms 滑入+渐显
 - 触发阈值提前 20px（滞回带 76/84），消除临界抖动
 
+### 2026-07-21 · 双文件夹分流
+
+- `mindtab-extension`（开源 BYOK 版，GitHub public）与 `mindtab-extension-store`（商店中转版，私有）分开维护
+
 ### 2026-06-17 · V0.2.3（商店线上版本）
 
 - 中转服务防滥用加固配合、WhatsNewModal 修复（详见 CHANGELOG）
@@ -81,10 +85,6 @@
 ### 2026-05-28 · V0.1 首发
 
 - Chrome Web Store 上架：一键收藏 + AI 摘要/标签/分类 + 自然语言搜索
-
-### 2026-07-21 · 双文件夹分流
-
-- `mindtab-extension`（开源 BYOK 版，GitHub public）与 `mindtab-extension-store`（商店中转版，私有）分开维护
 
 ## 已放弃 / 推迟
 
