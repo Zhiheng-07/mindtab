@@ -34,8 +34,12 @@ export function BookmarkGrid({
   const [visible, setVisible] = useState(PAGE_SIZE)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  // 列表变了重置可见数量
-  useEffect(() => setVisible(PAGE_SIZE), [items.length])
+  // 列表变了重置可见数量（渲染期间调整状态，替代 effect 重置）
+  const [prevCount, setPrevCount] = useState(items.length)
+  if (prevCount !== items.length) {
+    setPrevCount(items.length)
+    setVisible(PAGE_SIZE)
+  }
 
   useEffect(() => {
     if (!sentinelRef.current) return
