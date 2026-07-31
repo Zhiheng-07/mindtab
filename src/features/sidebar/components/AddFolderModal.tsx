@@ -46,14 +46,20 @@ export function AddFolderModal({ open, onClose }: Props) {
   const overLimit = width > WIDTH_MAX
   const showError = touched && overLimit
 
-  useEffect(() => {
+  // 关闭时重置表单（渲染期间调整状态）；timer 清理留在无 setState 的 effect 里
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (!open) {
       setName('')
       setBusy(false)
       setTouched(false)
       setShaking(false)
-      if (timerRef.current) clearTimeout(timerRef.current)
     }
+  }
+
+  useEffect(() => {
+    if (!open && timerRef.current) clearTimeout(timerRef.current)
   }, [open])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

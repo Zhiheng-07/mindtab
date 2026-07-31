@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Dialog,
   DialogCloseButton,
@@ -26,13 +26,16 @@ export function AddUrlModal({ open, onClose }: Props) {
   const [busy, setBusy] = useState(false)
   const pushToast = useToastStore((s) => s.pushToast)
 
-  useEffect(() => {
+  // 关闭时重置表单（渲染期间调整状态，替代 effect 重置，避免级联渲染）
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (!open) {
       setUrl('')
       setTitle('')
       setBusy(false)
     }
-  }, [open])
+  }
 
   const submit = async () => {
     const normalized = normalizeUrl(url.trim())
