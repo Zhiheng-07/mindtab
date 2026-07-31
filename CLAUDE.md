@@ -50,7 +50,7 @@ feature **内部**文件互引用**相对路径**（`./db`、`../store`、`../li
 
 - `src/newtab/App.tsx` —— 唯一的组装入口，只做 modal/drawer 组装 + 少量视图 state。
   数据/编排逻辑在 `src/newtab/useAppController.ts`，头部/主区在 `AppHeader.tsx` / `AppMain.tsx`。
-  当前 ~120 行，几乎全是挂载 11 个组件的 JSX；保持在 **150 行以内**（再多说明又混进了逻辑，应回抽到 useAppController 或拆子组件）。
+  当前 ~140 行，几乎全是挂载组件的 JSX；保持在 **150 行以内**（再多说明又混进了逻辑，应回抽到 useAppController 或拆子组件）。
 - `src/background/serviceWorker.ts` —— Service Worker 主文件，所有 alarm / contextMenu / action 监听器**必须在顶层注册**（Service Worker 会休眠）
 - `shared/db/connection.ts` —— 唯一的 IndexedDB 连接出口，组件不允许直接调用 `indexedDB.open`
 
@@ -63,12 +63,22 @@ feature **内部**文件互引用**相对路径**（`./db`、`../store`、`../li
 ## 改代码后必做
 
 1. 跑 `npm run build` 确保编译通过
-2. **UI 改动必须跑 `npm run smoke`**（Puppeteer 真实加载扩展模拟点击 + 截图），
+2. 跑 `npm run lint`，必须 **0 问题**（lint 已进 CI，任何 error/warning 都会挡 PR）
+3. 跑 `npm test`（vitest，`tests/` 下 37 条：localIndex / aiPrompts / searchApi / frecency）——
+   改搜索、frecency、prompt 相关逻辑时必过；CI 三关 build + lint + test 守门
+4. **UI 改动必须跑 `npm run smoke`**（Puppeteer 真实加载扩展模拟点击 + 截图），
    并人工查看 `screenshots/smoke/` 截图确认视觉/交互正常后才算完成——
-   仅编译通过不代表可用（历史教训：下拉被蒙层遮挡、悬停失效均通过了编译）
-3. 如果改了 IndexedDB schema，提醒用户**先在测试环境验证**
-4. 如果新增了跨 feature 依赖，提醒用户审查
-5. 完成特性后更新 `docs/progress.md`；重要设计决策写入 `docs/adrs/`
+   仅编译通过不代表可用（历史教训：下拉被蒙层遮挡、悬停失效均通过了编译）。
+   smoke 需真实显示环境，不进 CI，保留为本地步骤
+5. 如果改了 IndexedDB schema，提醒用户**先在测试环境验证**
+6. 如果新增了跨 feature 依赖，提醒用户审查
+7. 完成特性后更新 `docs/progress.md`；重要设计决策写入 `docs/adrs/`
+
+## 发版
+
+版本号 bump **四处**同步：`package.json` / `manifest.json` / `SettingsModal.tsx`（`VERSION`）/
+`src/features/onboarding/lib/whatsNew.ts`（`CURRENT_VERSION`），弹窗 `WhatsNewModal.tsx` 的
+`UPDATES` 文案一并更新。完整流程见父目录 `RELEASE_FLOW.md`。
 
 ## UI 浮层组件约定（历史踩坑，见 docs/adrs/002）
 
@@ -88,4 +98,4 @@ feature **内部**文件互引用**相对路径**（`./db`、`../store`、`../li
 
 （这一栏随时更新，记录尚未修复的已知问题）
 
-- 暂无（2026-06-08 feature-sliced 重构完成，跨 feature import 已审查，仅保留 db 数据层例外）
+- 暂无（2026-07-31 lint 清债完成全仓 0 问题并进 CI；feature-sliced 架构跨 feature import 已审查，仅保留 db 数据层例外）
