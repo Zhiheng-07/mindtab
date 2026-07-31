@@ -50,11 +50,13 @@ npm run build      # 生产构建
 
 1. Fork 并从最新主分支拉出特性分支
 2. 改动尽量聚焦：一个 PR 解决一件事，只动相关 feature 的文件夹
-3. 提交前确保通过：
+3. 提交前确保通过（CI 会在 PR 上自动跑前三项）：
 
    ```bash
    npm run build     # 编译必须通过
-   npm run lint      # lint 必须通过
+   npm run lint      # lint 必须通过（仓库保持 0 问题）
+   npm test          # 单元测试必须全绿
+   npm run smoke     # 涉及 UI 改动时：Puppeteer 冒烟 + 人工查看截图
    ```
 
 4. PR 描述里写清：改了什么、为什么、怎么验证（涉及 UI 的附截图）
