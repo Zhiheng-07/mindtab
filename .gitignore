@@ -35,3 +35,5 @@ screenshots/smoke/
 *.sw?
 .vercel
 mindtab-v*.zip
+# 发版 zip 归档目录（产物挂 GitHub Release，本地仅留档）
+releases/
