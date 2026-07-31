@@ -20,8 +20,6 @@ import {
   normalizeQuery,
 } from '../lib/frecency'
 
-export type SearchMode = 'ai' | 'keyword'
-
 /** 降级原因：'no-key' = 未配置 AI；'ai-error' = AI 调用失败；null = 未降级 */
 export type DegradedReason = 'no-key' | 'ai-error' | null
 
@@ -47,7 +45,6 @@ export interface UseSearchReturn {
   phase: SearchPhase
   /** 兼容字段：仅在提交后 AI 精排中且屏上无本地结果时为 true */
   loading: boolean
-  mode: SearchMode
   /** AI 不可用时，本次搜索降级到关键词模式的原因（null = 未降级） */
   degradedReason: DegradedReason
   /** 是否已查询过（控制空态/历史显示）*/
@@ -104,7 +101,6 @@ export function useSearch(): UseSearchReturn {
   const [results, setResults] = useState<SearchResultItem[]>([])
   const [phase, setPhase] = useState<SearchPhase>('idle')
   const [degradedReason, setDegradedReason] = useState<DegradedReason>(null)
-  const [mode, setMode] = useState<SearchMode>('ai')
   const [hasQueried, setHasQueried] = useState(false)
 
   // 并发守卫：previewLocal / search / reset 都会推进 seq，旧的异步结果静默丢弃
@@ -158,7 +154,6 @@ export function useSearch(): UseSearchReturn {
     setPhase('idle')
     setHasQueried(false)
     setDegradedReason(null)
-    setMode('ai')
   }, [])
 
   const previewLocal = useCallback(
@@ -206,14 +201,12 @@ export function useSearch(): UseSearchReturn {
 
       if (!(await isAiConfigured())) {
         if (seq !== seqRef.current) return
-        setMode('keyword')
         setDegradedReason('no-key')
         setPhase('local-only')
         return
       }
       if (seq !== seqRef.current) return
-      setMode('ai')
-      setPhase('ai-pending')
+        setPhase('ai-pending')
 
       // 阶段二：粗筛候选 → LLM 精排 → 替换结果
       try {
@@ -235,8 +228,7 @@ export function useSearch(): UseSearchReturn {
           setPhase('ai-done')
         } else if (local.length > 0) {
           // AI 无匹配但本地有结果：保留本地结果并如实标注
-          setMode('keyword')
-          setPhase('local-only')
+            setPhase('local-only')
         } else {
           setResults([])
           setPhase('ai-done')
@@ -245,7 +237,6 @@ export function useSearch(): UseSearchReturn {
         if (seq !== seqRef.current) return
         console.warn('[MindTab] AI search failed, fallback to local:', (e as Error).message)
         setDegradedReason(e instanceof AiNotConfiguredError ? 'no-key' : 'ai-error')
-        setMode('keyword')
         setPhase('local-only')
       }
     },
@@ -257,7 +248,6 @@ export function useSearch(): UseSearchReturn {
     results,
     phase,
     loading: phase === 'ai-pending' && results.length === 0,
-    mode,
     degradedReason,
     hasQueried,
     previewLocal,
