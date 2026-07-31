@@ -1,7 +1,7 @@
-// useConfirm — 基于 shadcn AlertDialog。
-// API 保持不变（ask({title, description, danger, ...}) → Promise<boolean>），调用方零改动。
+// ConfirmProvider — 基于 shadcn AlertDialog。
+// hook 与 Context 在 useConfirm.ts（本文件只导出组件，保证 fast refresh）。
 
-import { createContext, useCallback, useContext, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,26 +12,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/shared/ui/alert-dialog'
-import { buttonVariants } from '@/shared/ui/button'
+import { buttonVariants } from '@/shared/ui/button-variants'
 import { cn } from '@/shared/lib/utils'
-
-export interface ConfirmOptions {
-  title: string
-  description?: string
-  confirmText?: string
-  cancelText?: string
-  danger?: boolean
-}
-
-type AskFn = (opts: ConfirmOptions) => Promise<boolean>
-
-const ConfirmContext = createContext<AskFn | null>(null)
-
-export function useConfirm(): AskFn {
-  const ctx = useContext(ConfirmContext)
-  if (!ctx) throw new Error('useConfirm must be inside <ConfirmProvider>')
-  return ctx
-}
+import { ConfirmContext, type AskFn, type ConfirmOptions } from '@/shared/ui/useConfirm'
 
 interface State {
   opts: ConfirmOptions
