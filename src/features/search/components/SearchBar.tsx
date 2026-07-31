@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { X } from 'lucide-react'
-import { useSearch } from '../hooks/useSearch'
+import { Loader2, X } from 'lucide-react'
+import { useSearch, type SearchPhase } from '../hooks/useSearch'
 import { touchOpened } from '@/features/bookmarks/db'
 import { useBookmarkStore } from '@/features/bookmarks'
 import { Skeleton } from '@/shared/ui/Skeleton'
@@ -10,38 +10,72 @@ import { SearchResult } from './SearchResult'
 
 const EASE = 'cubic-bezier(0.25, 0.1, 0.25, 1)'
 const DURATION = 400
+/** 输入即搜防抖：本地索引毫秒级，250ms 仅为避免逐键重渲染 */
+const PREVIEW_DEBOUNCE = 250
+
+const PHASE_LABELS: Record<SearchPhase, string> = {
+  idle: '语义搜索',
+  previewing: '即时匹配',
+  'ai-pending': '本地匹配 · AI 精排中…',
+  'ai-done': '语义搜索',
+  'local-only': '关键词搜索',
+}
 
 export function SearchBar({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const [active, setActive] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [query, setQuery] = useState('')
   const [alertDismissed, setAlertDismissed] = useState(false)
+  const [selectedIdx, setSelectedIdx] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const pillRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<number | null>(null)
   const {
     history,
     results,
+    phase,
     loading,
-    mode,
     degradedReason,
     hasQueried,
+    previewLocal,
     search,
+    primeIndex,
+    noteResultOpened,
     reset,
     refreshHistory,
   } = useSearch()
 
+  const clearPreviewTimer = () => {
+    if (debounceRef.current !== null) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+    }
+  }
+
   const activate = () => {
     setActive(true)
+    primeIndex()
     void refreshHistory()
   }
 
   const deactivate = () => {
+    clearPreviewTimer()
     setActive(false)
     setHovered(false)
     setQuery('')
     setAlertDismissed(false)
+    setSelectedIdx(-1)
     reset()
   }
+
+  const onInputChange = (value: string) => {
+    setQuery(value)
+    setSelectedIdx(-1) // 输入变化即将刷新结果，清空键盘选中
+    clearPreviewTimer()
+    debounceRef.current = window.setTimeout(() => previewLocal(value), PREVIEW_DEBOUNCE)
+  }
+
+  useEffect(() => clearPreviewTimer, [])
 
   useEffect(() => {
     if (active) {
@@ -65,14 +99,31 @@ export function SearchBar({ onOpenSettings }: { onOpenSettings?: () => void }) {
   }, [active])
 
   const submit = (q: string) => {
+    clearPreviewTimer()
     setQuery(q)
+    setSelectedIdx(-1)
     void search(q)
   }
 
   const openResult = (id: string, url: string) => {
+    noteResultOpened(id)
     void touchOpened(id).then(() => useBookmarkStore.getState().hydrate())
     window.open(url, '_blank', 'noopener,noreferrer')
     deactivate()
+  }
+
+  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' && results.length > 0) {
+      e.preventDefault()
+      setSelectedIdx((i) => (i + 1) % results.length)
+    } else if (e.key === 'ArrowUp' && results.length > 0) {
+      e.preventDefault()
+      setSelectedIdx((i) => (i - 1 + results.length) % results.length)
+    } else if (e.key === 'Enter') {
+      const picked = selectedIdx >= 0 ? results[selectedIdx] : undefined
+      if (picked) openResult(picked.bookmark.id, picked.bookmark.url)
+      else submit(query)
+    }
   }
 
   const wide = active || hovered
@@ -207,7 +258,28 @@ export function SearchBar({ onOpenSettings }: { onOpenSettings?: () => void }) {
                       </button>
                     </span>
                   ) : (
-                    <span>AI 暂不可用，已切换关键词搜索</span>
+                    <span>
+                      AI 搜索暂时不可用，当前为基础搜索模式 ·{' '}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setAlertDismissed(true)
+                          submit(query)
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          color: '#b45309',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        重试 AI 搜索
+                      </button>
+                    </span>
                   )}
                   <AlertCloseButton onClick={() => setAlertDismissed(true)} />
                 </div>
@@ -216,17 +288,23 @@ export function SearchBar({ onOpenSettings }: { onOpenSettings?: () => void }) {
               <div
                 style={{
                   display: 'flex',
-                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 6,
                   fontSize: 12,
                   fontWeight: 500,
                   color: 'var(--mt-text-muted)',
                   padding: '0 8px 0 4px',
                 }}
               >
-                <span>{mode === 'ai' ? '语义搜索' : '关键词搜索'}</span>
+                <span>{PHASE_LABELS[phase]}</span>
+                {phase === 'ai-pending' && (
+                  <Loader2 size={12} className="animate-spin" style={{ flexShrink: 0 }} />
+                )}
               </div>
 
-              {/* 结果区域 — 空状态 / 加载 / 搜索结果 */}
+              {/* 结果区域 — 空状态 / 加载 / 搜索结果
+                  loading 仅在「AI 精排中且屏上无本地结果」时为真；
+                  精排等待期本地结果保持可见可点，避免整屏 Skeleton */}
               {!loading && !hasQueried && <SearchIllustration />}
               {loading && <LoadingList />}
               {!loading && hasQueried && results.length === 0 && (
@@ -234,10 +312,11 @@ export function SearchBar({ onOpenSettings }: { onOpenSettings?: () => void }) {
               )}
               {!loading &&
                 hasQueried &&
-                results.map((r) => (
+                results.map((r, i) => (
                   <SearchResult
                     key={r.bookmark.id}
                     item={r}
+                    selected={i === selectedIdx}
                     onSelect={() => openResult(r.bookmark.id, r.bookmark.url)}
                   />
                 ))}
@@ -317,10 +396,8 @@ export function SearchBar({ onOpenSettings }: { onOpenSettings?: () => void }) {
               <input
                 ref={inputRef}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') submit(query)
-                }}
+                onChange={(e) => onInputChange(e.target.value)}
+                onKeyDown={onInputKeyDown}
                 className="search-input"
                 placeholder="用自然语言找回收藏…"
                 style={{

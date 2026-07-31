@@ -331,6 +331,119 @@ async function main() {
     }
   }
 
+  // ── 搜索冒烟：预置书签 → 输入即出本地结果 → 回车（无 key → 降级链路）──
+  console.log('🧪 测试搜索（本地即时结果 + 降级链路）...')
+
+  // 关闭设置模态
+  await page.keyboard.press('Escape')
+  await new Promise((r) => setTimeout(r, 600))
+
+  // 直接向扩展 IndexedDB 预置书签（结构对齐 shared/db/types.ts Bookmark）
+  const now = Date.now()
+  const seedBookmarks = [
+    {
+      id: 'smoke-bm-1', url: 'https://zhihu.com/react19', title: 'React 19 新特性详解',
+      favicon: '', domain: 'zhihu.com', summary: '介绍 React 19 的并发特性与新 Hooks 用法',
+      tags: ['React', '前端'], contentType: '文章', folderId: null, pinnedIn: [],
+      createdAt: now - 45 * 86400000, lastOpenedAt: now - 3 * 86400000, indexStatus: 'done', order: 1,
+    },
+    {
+      id: 'smoke-bm-2', url: 'https://bilibili.com/css-anim', title: 'CSS 动画完全指南',
+      favicon: '', domain: 'bilibili.com', summary: '讲解 CSS 动画与过渡的系统视频教程',
+      tags: ['CSS', '动画', '教程'], contentType: '视频', folderId: null, pinnedIn: [],
+      createdAt: now - 10 * 86400000, lastOpenedAt: 0, indexStatus: 'done', order: 2,
+    },
+    {
+      id: 'smoke-bm-3', url: 'https://sspai.com/prompt', title: '提示词工程实用技巧',
+      favicon: '', domain: 'sspai.com', summary: '总结 18 个提示词工程实用技巧提升 AI 对话质量',
+      tags: ['提示词', 'AI'], contentType: '文章', folderId: null, pinnedIn: [],
+      createdAt: now - 2 * 86400000, lastOpenedAt: now - 86400000, indexStatus: 'done', order: 3,
+    },
+  ]
+  await page.evaluate(async (bookmarks) => {
+    const db = await new Promise((res, rej) => {
+      const req = indexedDB.open('mindtab', 3)
+      req.onsuccess = () => res(req.result)
+      req.onerror = () => rej(req.error)
+    })
+    await new Promise((res, rej) => {
+      const t = db.transaction('bookmarks', 'readwrite')
+      const s = t.objectStore('bookmarks')
+      bookmarks.forEach((b) => s.put(b))
+      t.oncomplete = res
+      t.onerror = () => rej(t.error)
+    })
+    db.close()
+  }, seedBookmarks)
+  PASS(`已预置 ${seedBookmarks.length} 条书签`)
+
+  // 刷新让 store 重新 hydrate（空态页面不渲染搜索 pill）
+  await page.reload({ waitUntil: 'load' })
+  await page.waitForSelector('button[aria-label="设置"]', { timeout: 15_000 })
+  await new Promise((r) => setTimeout(r, 1000))
+
+  // 点击搜索 pill 打开面板
+  await page.evaluate(() => {
+    const spans = [...document.querySelectorAll('span')]
+    const pillText = spans.find((s) => s.textContent === '用自然语言找回收藏…')
+    pillText?.click()
+  })
+  await new Promise((r) => setTimeout(r, 700))
+  const searchInput = await page.$('input.search-input')
+  if (!searchInput) {
+    await page.screenshot({ path: path.join(screenshotDir, 'debug-search-fail.png') })
+    FAIL('搜索面板未打开（见 debug-search-fail.png）')
+  } else {
+    PASS('搜索面板已打开')
+
+    // 输入中文查询 → 防抖 250ms 后本地即时结果
+    await searchInput.type('动画视频', { delay: 40 })
+    await new Promise((r) => setTimeout(r, 800))
+    await page.screenshot({ path: path.join(screenshotDir, '07-search-preview.png') })
+    const preview = await page.evaluate(() => {
+      const body = document.body.textContent ?? ''
+      return {
+        hasHit: body.includes('CSS 动画完全指南'),
+        hasLabel: body.includes('即时匹配'),
+      }
+    })
+    if (preview.hasHit && preview.hasLabel) {
+      PASS('输入即出本地结果（命中「CSS 动画完全指南」，标注「即时匹配」）')
+    } else {
+      FAIL(`本地即时结果异常: 命中=${preview.hasHit} 标注=${preview.hasLabel}`)
+    }
+
+    // 方向键选中第一条
+    await page.keyboard.press('ArrowDown')
+    await new Promise((r) => setTimeout(r, 300))
+    await page.screenshot({ path: path.join(screenshotDir, '08-search-arrow-select.png') })
+    PASS('截屏 #8：方向键选中态')
+
+    // 取消选中（回到 -1 需要循环，直接清空重输避免 Enter 打开书签）
+    await page.keyboard.press('ArrowUp')
+    await new Promise((r) => setTimeout(r, 200))
+    // 回车提交：未配置 AI → local-only + 降级横幅
+    // （ArrowUp 后仍有选中项，故用点击历史链路外的直接 submit：先清选中）
+    await searchInput.type(' ', { delay: 20 }) // 触发 results 变化重置 selectedIdx
+    await new Promise((r) => setTimeout(r, 500))
+    await page.keyboard.press('Enter')
+    await new Promise((r) => setTimeout(r, 900))
+    await page.screenshot({ path: path.join(screenshotDir, '09-search-submitted.png') })
+    const submitted = await page.evaluate(() => {
+      const body = document.body.textContent ?? ''
+      return {
+        degraded: body.includes('未配置 AI 服务'),
+        label: body.includes('关键词搜索'),
+        stillHasResults: body.includes('CSS 动画完全指南'),
+      }
+    })
+    if (submitted.degraded && submitted.label && submitted.stillHasResults) {
+      PASS('回车后无 key 降级链路正常（横幅 + 关键词搜索标注 + 结果保留）')
+    } else {
+      FAIL(`降级链路异常: 横幅=${submitted.degraded} 标注=${submitted.label} 结果=${submitted.stillHasResults}`)
+    }
+  }
+
   await browser.close()
   console.log('\n🎉 冒烟测试完成，截图已保存到 screenshots/smoke/')
 }
