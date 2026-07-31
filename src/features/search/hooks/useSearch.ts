@@ -113,9 +113,16 @@ export function useSearch(): UseSearchReturn {
     setHistory(await getSearchHistory())
   }, [])
 
+  // 挂载时加载历史：setState 放在异步回调里（规则对 async 函数体保守判定为同步 setState）
   useEffect(() => {
-    void refreshHistory()
-  }, [refreshHistory])
+    let alive = true
+    void getSearchHistory().then((h) => {
+      if (alive) setHistory(h)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const ensureIndex = useCallback(async (): Promise<IndexCache> => {
     const cached = indexRef.current
