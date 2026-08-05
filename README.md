@@ -7,7 +7,7 @@ MindTab 是一个 Chrome 浏览器扩展，替代你的新标签页。一键收�
 - 官网：https://mindtab.cn
 - Chrome Web Store：https://chromewebstore.google.com/detail/mindtab/ildffcgdmbcaenjkbapfcgaklaejohme
 
-![MindTab 主界面](screenshots/01_dashboard_light.png)
+![MindTab 主界面](screenshots/02_dashboard_dark.png)
 
 | AI 搜索 | 侧边栏文件夹 | 设置 |
 |---|---|---|
