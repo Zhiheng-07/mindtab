@@ -3,7 +3,7 @@
 // 新图加载成功后才更新展示层，用户永远不会看到闪动或碎图。
 
 import { useCallback, useMemo, useState } from 'react'
-import { faviconCandidates, isGenericFavicon } from '@/shared/lib/favicon'
+import { faviconCandidates, isGenericFavicon, isServiceFavicon } from '@/shared/lib/favicon'
 import { faviconServiceCandidates } from '@/shared/lib/faviconDiscovery'
 import { FAVICON_MAP } from '@/shared/lib/faviconMap'
 
@@ -24,11 +24,13 @@ export function Favicon({ src, domain, title, size, rounded = false }: Props) {
   // 构建候选列表（优先级：真实URL > 静态映射 > 通用路径探测 > 公共服务兜底）
   const candidates = useMemo(() => {
     const list: string[] = []
-    if (src && !isGenericFavicon(src, domain)) {
+    if (src && !isGenericFavicon(src, domain) && !isServiceFavicon(src)) {
       // Chrome tab.favIconUrl 等可靠来源 → 首选
       list.push(src)
     } else {
-      if (src) list.push(src)
+      // 通用路径 / 服务 URL 都不可靠，走完整候选链
+      // （服务 URL 会在末尾的公共服务兜底中重新参与）
+      if (src && !isServiceFavicon(src)) list.push(src)
       // 静态映射（覆盖被墙/CF 防护的热门站点）
       const mapped = FAVICON_MAP[domain]
       if (mapped && !list.includes(mapped)) list.push(mapped)

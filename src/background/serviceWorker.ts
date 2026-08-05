@@ -15,8 +15,7 @@ import { MSG, broadcast } from '@/shared/messages'
 import { runIndexing, runBatchIndexing, isTransientError } from '@/shared/lib/aiIndex'
 import { getAiConfig, hasHostPermission } from '@/shared/lib/aiProvider'
 import { remove as storageRemove } from '@/shared/storage'
-import { faviconUrl, isGenericFavicon } from '@/shared/lib/favicon'
-import { discoverFavicon } from '@/shared/lib/faviconDiscovery'
+import { faviconUrl, isGenericFavicon, isServiceFavicon } from '@/shared/lib/favicon'
 import { FAVICON_MAP } from '@/shared/lib/faviconMap'
 
 const MAX_PENDING = 10
@@ -334,15 +333,18 @@ function sleep(ms: number): Promise<void> {
 
 // ───── Favicon 后台发现 ─────
 
-// 按域名去重：同域名只处理一次。先查静态映射，再调 server。
+// 按域名去重：同域名只处理一次。只信静态映射（零网络请求）。
+// 不写入未验证的公共服务 URL —— 历史上曾把 DDG URL 直接写库，
+// 导致 Favicon 组件把它当可靠来源、跳过直连路径探测（候选链降级）。
+// 显示层的完整回退链见 shared/ui/Favicon.tsx。
 // 一轮结束后只广播一次，避免 N 次 hydrate 导致闪动。
 async function tickFaviconDiscovery(): Promise<number> {
   const all = await getAllBookmarks()
 
-  // 找出 favicon 为通用 /favicon.ico 的书签，按域名分组
+  // 找出 favicon 为通用 /favicon.ico 或历史遗留服务 URL 的书签，按域名分组
   const domainMap = new Map<string, Bookmark[]>()
   for (const b of all) {
-    if (isGenericFavicon(b.favicon, b.domain)) {
+    if (isGenericFavicon(b.favicon, b.domain) || isServiceFavicon(b.favicon)) {
       const group = domainMap.get(b.domain)
       if (group) group.push(b)
       else domainMap.set(b.domain, [b])
@@ -350,24 +352,19 @@ async function tickFaviconDiscovery(): Promise<number> {
   }
   if (domainMap.size === 0) return 0
 
-  const domains = [...domainMap.keys()].slice(0, FAVICON_BATCH)
+  // 只处理静态映射命中的域名，未命中的不占批次名额
+  const domains = [...domainMap.keys()]
+    .filter((d) => FAVICON_MAP[d])
+    .slice(0, FAVICON_BATCH)
   let updated = 0
 
   await Promise.allSettled(
     domains.map(async (domain) => {
       const bookmarks = domainMap.get(domain)!
-
-      // 优先查静态映射（零网络请求）
-      let discovered: string | null = FAVICON_MAP[domain] ?? null
-
-      // 静态映射未命中 → 调 server API
-      if (!discovered) {
-        const sampleUrl = bookmarks[0].url
-        discovered = await discoverFavicon(sampleUrl, domain)
-      }
-      if (!discovered) return
+      const discovered = FAVICON_MAP[domain]
 
       for (const b of bookmarks) {
+        if (b.favicon === discovered) continue
         try {
           await updateBookmark(b.id, { favicon: discovered })
           updated++
