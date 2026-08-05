@@ -3,7 +3,7 @@
 // 新图加载成功后才更新展示层，用户永远不会看到闪动或碎图。
 
 import { useCallback, useMemo, useState } from 'react'
-import { faviconCandidates, isGenericFavicon, isServiceFavicon } from '@/shared/lib/favicon'
+import { faviconCandidates, isGenericFavicon, isServiceFavicon, rootDomain } from '@/shared/lib/favicon'
 import { faviconServiceCandidates } from '@/shared/lib/faviconDiscovery'
 import { FAVICON_MAP } from '@/shared/lib/faviconMap'
 
@@ -39,8 +39,11 @@ export function Favicon({ src, domain, title, size, rounded = false }: Props) {
         if (!list.includes(c)) list.push(c)
       }
     }
-    // 公共服务兜底（DuckDuckGo → Google s2），失败则回落字母徽章
-    for (const c of faviconServiceCandidates(domain)) {
+    // 公共服务兜底：DDG(域名) → DDG(根域，子域名兜底) → Google s2，失败则回落字母徽章
+    const services = faviconServiceCandidates(domain)
+    const root = rootDomain(domain)
+    if (root) services.splice(1, 0, faviconServiceCandidates(root)[0])
+    for (const c of services) {
       if (!list.includes(c)) list.push(c)
     }
     return list

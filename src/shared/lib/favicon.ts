@@ -35,3 +35,24 @@ export function isServiceFavicon(url: string): boolean {
     url.startsWith('https://www.google.com/s2/favicons')
   )
 }
+
+// 常见双段公共后缀（简化处理，不引入完整 Public Suffix List）
+const TWO_LEVEL_TLDS = new Set([
+  'com.cn', 'net.cn', 'org.cn', 'gov.cn', 'edu.cn', 'ac.cn',
+  'co.uk', 'org.uk', 'com.hk', 'com.tw', 'co.jp', 'com.au',
+  'com.br', 'co.kr', 'com.sg',
+])
+
+/**
+ * 取可注册根域（简化版）：sub.example.com → example.com；a.b.example.com.cn → example.com.cn。
+ * 已是根域 / IP / localhost 等无根域可取时返回 null。
+ * 用途：DDG 常只收录根域，子域名查 404 时用根域图标兜底。
+ */
+export function rootDomain(domain: string): string | null {
+  if (/^[\d.]+$/.test(domain) || domain.includes(':')) return null // IPv4 / IPv6
+  const parts = domain.split('.')
+  if (parts.length < 3) return null
+  const keep = TWO_LEVEL_TLDS.has(parts.slice(-2).join('.')) ? 3 : 2
+  if (parts.length <= keep) return null
+  return parts.slice(-keep).join('.')
+}
