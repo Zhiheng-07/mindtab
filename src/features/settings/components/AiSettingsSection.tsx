@@ -1,5 +1,6 @@
 // AI 服务设置区块：厂商选择 / API Key / baseUrl / model / 测试连接 / 保存。
-// 挂载在 SettingsModal 内（「通用」与「数据管理」之间）。
+// 挂载在 SettingsModal 内（「通用」与「数据管理」之间）；
+// 也以 variant="guide" 形态挂在 onboarding 的 AI 绑定引导弹窗内。
 //
 // ⚠️ 权限手势约束：chrome.permissions.request 只能在用户手势中调用，
 // 且调用链上它之前不能有任何耗尽 activation 的 await。因此测试/保存按钮的
@@ -54,7 +55,19 @@ function hostOf(baseUrl: string): string {
   }
 }
 
-export function AiSettingsSection() {
+interface Props {
+  /**
+   * settings：设置面板内（默认）。
+   * guide：首次 AI 绑定引导弹窗内——隐藏分组标题 / 配置摘要 / 隐私说明（弹窗自带说明），
+   * 保存按钮文案改为「保存并开始使用」。
+   */
+  variant?: 'settings' | 'guide'
+  /** 保存成功后回调（引导弹窗据此关闭） */
+  onSaved?: () => void
+}
+
+export function AiSettingsSection({ variant = 'settings', onSaved }: Props = {}) {
+  const isGuide = variant === 'guide'
   const pushToast = useToastStore((s) => s.pushToast)
 
   // ── 草稿 state（handler 只读这里，不读 storage）──
@@ -264,6 +277,7 @@ export function AiSettingsSection() {
         await setAiConfig(draft)
         setSaved(draft)
         pushToast('success', 'AI 配置已保存', 'ai-config-save')
+        onSaved?.()
       })
       .catch((e) => {
         pushToast('error', `保存失败：${truncateError((e as Error).message)}`, 'ai-save-fail')
@@ -287,8 +301,8 @@ export function AiSettingsSection() {
         : undefined
 
   return (
-    <Section title="AI 服务">
-      <Row label="AI 服务配置" hint={summary} />
+    <Section title={isGuide ? undefined : 'AI 服务'}>
+      {!isGuide && <Row label="AI 服务配置" hint={summary} />}
 
       <Row
         label="服务商"
@@ -519,7 +533,7 @@ export function AiSettingsSection() {
           onClick={handleSave}
           disabled={testing || saving}
         >
-          {saving ? '保存中…' : '保存'}
+          {saving ? '保存中…' : isGuide ? '保存并开始使用' : '保存'}
         </Button>
         {testResult && (
           <span
@@ -565,7 +579,7 @@ export function AiSettingsSection() {
         )}
       </div>
 
-      <Row label="隐私说明" hint={PRIVACY_NOTE} />
+      {!isGuide && <Row label="隐私说明" hint={PRIVACY_NOTE} />}
     </Section>
   )
 }
