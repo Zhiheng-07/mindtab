@@ -17,7 +17,19 @@ interface Props {
 export function AiGuideModal({ open, onClose }: Props) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto gap-4">
+      <DialogContent
+        className="sm:max-w-lg max-h-[85vh] overflow-y-auto gap-4"
+        onOpenAutoFocus={(e) => {
+          // 默认会聚焦第一个可聚焦元素（服务商下拉）；改为聚焦 API Key 输入框，方便直接粘贴
+          const keyInput = (e.currentTarget as HTMLElement | null)?.querySelector<HTMLInputElement>(
+            'input[type="password"]',
+          )
+          if (keyInput) {
+            e.preventDefault()
+            keyInput.focus()
+          }
+        }}
+      >
         <div>
           <DialogHeader>
             <DialogTitle>绑定你的 AI 服务</DialogTitle>

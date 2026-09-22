@@ -117,11 +117,12 @@ async function main() {
       saveLabel: text.includes('保存并开始使用'),
       skip: text.includes('稍后再说'),
       noSettingsTitle: !text.includes('AI 服务配置'),
+      keyFocused: document.activeElement?.getAttribute('type') === 'password',
       keyLink: link ? { href: link.href, target: link.target } : null,
     }
   })
-  if (guideState.saveLabel && guideState.skip && guideState.noSettingsTitle) {
-    PASS('引导弹窗为 guide 形态（「保存并开始使用」+「稍后再说」，无设置摘要行）')
+  if (guideState.saveLabel && guideState.skip && guideState.noSettingsTitle && guideState.keyFocused) {
+    PASS('引导弹窗为 guide 形态（「保存并开始使用」+「稍后再说」，无设置摘要行，API Key 输入框已聚焦）')
   } else {
     FAIL(`引导弹窗形态异常: ${JSON.stringify(guideState)}`)
   }
