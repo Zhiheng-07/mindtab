@@ -7,14 +7,23 @@
 
 ## 当前焦点
 
-- v0.2.7 已发版（2026-07-31），观察期：自用验证 + 关注 GitHub Issues
+- v0.2.8：GitHub Release 与 Chrome 应用商店同包发布（商店版自此改为直连版，代码单一来源）
 
 ## 待办
 
-- （待定）商店版（mindtab-extension-store）同步本期改动的评估
+- （待办）MiniMax 官方 API 地址迁移至 `api.minimax.cn`（2026-09 官方文档已更新，旧 `api.minimaxi.com` 目前仍可用），择机更新预设 baseUrl
 - （待议）向量粗筛扩展：书签量 >1000 或纯语义查询失败率明显时启动，见 ADR-003
 
 ## 已完成
+
+### 2026-09-22 · V0.2.8：商店版对齐 + AI 绑定引导
+
+- **商店版对齐**：商店版由中转版 0.2.3 改为与开源版同一份代码（直连，用户自填 Key）；商店包与 GitHub Release 同一个 zip，上传到原商店条目。数据层（IndexedDB `mindtab` v3、视频缓存 v1、既有 `mt:*` key）完全兼容，升级不丢数据
+- **AI 绑定引导**：新用户同意隐私后 / 升级用户看完版本更新后（未配置 AI 者）弹出一次，内嵌 `AiSettingsSection`（新增 `variant="guide"` + `onSaved`）；弹窗编排抽到 `onboarding/hooks/useOnboardingFlow`，`App.tsx` 118 行
+- **获取 Key 链接**：`AiProviderPreset.keyUrl`，12 家均对照官方文档核实
+- **横幅**：「AI 未配置」横幅空状态也显示；新增 `useAiConfiguredState` 避免读取前闪烁
+- **隐私弹窗措辞**对齐直连；`docs/chrome-web-store.md` 按直连版重写
+- 验证：build / lint 0 / 53 条单测 / smoke 全绿；Puppeteer 同目录同 profile 换包升级模拟（商店 0.2.3 → 0.2.8、GitHub 0.2.7 → 0.2.8）扩展 ID 不变、数据逐条一致、弹窗顺序正确、回滚兼容。局限：自动化环境下 onInstalled 恒为 install，update 分支（清理 `mt:searchQuota`）未在模拟中触发
 
 ### 2026-08-05 · Favicon 获取失败修复（PR #6）
 

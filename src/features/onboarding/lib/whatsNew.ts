@@ -2,7 +2,7 @@
 
 import { get as storageGet, set as storageSet, STORAGE_KEYS } from '@/shared/storage'
 
-export const CURRENT_VERSION = '0.2.7'
+export const CURRENT_VERSION = '0.2.8'
 
 export async function shouldShowWhatsNew(): Promise<boolean> {
   const seen = await storageGet<string>(STORAGE_KEYS.lastSeenVersion, '')

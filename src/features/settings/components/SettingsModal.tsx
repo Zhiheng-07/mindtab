@@ -22,7 +22,7 @@ import { Button } from '@/shared/ui/button'
 import { Row, Section, Segmented } from './SettingsPrimitives'
 import { AiSettingsSection } from './AiSettingsSection'
 
-const VERSION = '0.2.7'
+const VERSION = '0.2.8'
 
 interface Props {
   open: boolean

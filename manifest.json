@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MindTab",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "不用整理，随时找得到",
   "permissions": [
     "storage",
