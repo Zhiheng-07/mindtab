@@ -4,7 +4,7 @@
 import { useState, type RefObject } from 'react'
 import { SkeletonCard } from '@/shared/ui/Skeleton'
 import type { Bookmark } from '@/shared/db'
-import { useAiConfigured } from '@/shared/lib/aiStatus'
+import { useAiConfiguredState } from '@/shared/lib/aiStatus'
 import {
   BookmarkGrid,
   PinnedRow,
@@ -44,13 +44,15 @@ export function AppMain({
   onAddUrl,
   onOpenSettings,
 }: AppMainProps) {
-  const aiConfigured = useAiConfigured()
+  // null = 尚未读取完成：此时不渲染横幅，避免已配置用户看到一闪
+  const aiConfigured = useAiConfiguredState()
   // 横幅 dismiss 只存内存：刷新页面后重新出现
   const [bannerDismissed, setBannerDismissed] = useState(false)
 
   return (
     <main className="mx-auto max-w-6xl px-6 pt-0 pb-32">
-      {!aiConfigured && !isEmpty && !bannerDismissed && (
+      {/* 没有书签时也显示：新用户跳过 AI 引导后靠它提醒 */}
+      {aiConfigured === false && !bannerDismissed && (
         <AiWarningBanner
           onClick={onOpenSettings}
           onClose={() => setBannerDismissed(true)}

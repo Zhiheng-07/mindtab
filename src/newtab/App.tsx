@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { DndShell } from '@/shared/dnd'
 import { ConfirmProvider } from '@/shared/ui/ConfirmModal'
 import { TooltipProvider } from '@/shared/ui/tooltip'
@@ -8,7 +8,7 @@ import { PendingPanel } from '@/features/pending'
 import { SearchBar } from '@/features/search'
 import { Sidebar, SIDEBAR_WIDTH } from '@/features/sidebar'
 import { SettingsModal } from '@/features/settings'
-import { PrivacyModal, getPrivacyState, setPrivacyState, type PrivacyState, WhatsNewModal, shouldShowWhatsNew } from '@/features/onboarding'
+import { AiGuideModal, PrivacyModal, WhatsNewModal, useOnboardingFlow } from '@/features/onboarding'
 import { Background } from '@/features/wallpaper'
 import { Toaster } from '@/features/toast'
 import { AppHeader } from './AppHeader'
@@ -17,14 +17,12 @@ import { useAppController } from './useAppController'
 
 export function App() {
   const app = useAppController()
+  const onboarding = useOnboardingFlow()
 
   const [addOpen, setAddOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [focusAi, setFocusAi] = useState(false)
-  const [privacy, setPrivacy] = useState<PrivacyState>('agreed')
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
-  const [showWhatsNew, setShowWhatsNew] = useState(false)
 
   const onOpenSettings = useCallback(() => {
     setFocusAi(false)
@@ -36,18 +34,6 @@ export function App() {
     setFocusAi(false)
     void refreshAiStatus()
   }, [])
-
-  useEffect(() => {
-    void getPrivacyState().then((s) => {
-      setPrivacy(s)
-      if (s === 'unknown') setShowPrivacyModal(true)
-    })
-    void shouldShowWhatsNew().then((show) => {
-      if (show) setShowWhatsNew(true)
-    })
-  }, [])
-
-  const dismissedBanner = privacy === 'dismissed'
 
   return (
     <TooltipProvider>
@@ -72,9 +58,9 @@ export function App() {
             className="min-h-screen w-full text-foreground transition-[padding] duration-200 ease-out"
             style={{ paddingLeft: sidebarOpen ? SIDEBAR_WIDTH : 0 }}
           >
-            {dismissedBanner && (
+            {onboarding.privacy === 'dismissed' && (
               <button
-                onClick={() => setShowPrivacyModal(true)}
+                onClick={onboarding.openPrivacyModal}
                 className="w-full bg-warning text-white text-xs py-2 text-center hover:bg-warning/90 transition-colors"
               >
                 完成授权以使用完整功能 →
@@ -117,20 +103,12 @@ export function App() {
             <AddUrlModal open={addOpen} onClose={() => setAddOpen(false)} />
             <SettingsModal open={settingsOpen} onClose={onCloseSettings} focusAi={focusAi} />
 
-            <WhatsNewModal open={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
-
+            <WhatsNewModal open={onboarding.showWhatsNew} onClose={onboarding.closeWhatsNew} />
+            <AiGuideModal open={onboarding.showAiGuide} onClose={onboarding.closeAiGuide} />
             <PrivacyModal
-              open={showPrivacyModal}
-              onAgree={async () => {
-                await setPrivacyState('agreed')
-                setPrivacy('agreed')
-                setShowPrivacyModal(false)
-              }}
-              onDismiss={async () => {
-                await setPrivacyState('dismissed')
-                setPrivacy('dismissed')
-                setShowPrivacyModal(false)
-              }}
+              open={onboarding.showPrivacyModal}
+              onAgree={onboarding.agreePrivacy}
+              onDismiss={onboarding.dismissPrivacy}
             />
           </div>
         </DndShell>

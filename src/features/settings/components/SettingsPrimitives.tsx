@@ -2,21 +2,23 @@
 // 从 SettingsModal.tsx 提取，供 SettingsModal 与 AiSettingsSection 共用，
 // 仅限 settings feature 内部相对导入。
 
-export function Section({ title, children }: { title: string; children: React.ReactNode }) {
+export function Section({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div
-        style={{
-          fontSize: 11,
-          color: 'var(--mt-text-placeholder)',
-          fontWeight: 500,
-          letterSpacing: 0.4,
-          textTransform: 'uppercase',
-          paddingLeft: 4,
-        }}
-      >
-        {title}
-      </div>
+      {title && (
+        <div
+          style={{
+            fontSize: 11,
+            color: 'var(--mt-text-placeholder)',
+            fontWeight: 500,
+            letterSpacing: 0.4,
+            textTransform: 'uppercase',
+            paddingLeft: 4,
+          }}
+        >
+          {title}
+        </div>
+      )}
       <div
         className="divide-y divide-[var(--mt-border)]"
         style={{

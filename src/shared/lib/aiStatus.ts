@@ -22,13 +22,12 @@ export async function refreshAiStatus(): Promise<boolean> {
 }
 
 /**
- * React hook：AI 是否已配置。
- *
- * - 首次调用（缓存 null）时异步读 chrome.storage，返回 false 兜底。
- * - 缓存有值后同步返回；refreshAiStatus() 被调用时自动更新所有挂载的组件。
+ * React hook：AI 配置状态，首次读取 chrome.storage 完成前为 null。
+ * 供需要区分「未读取」与「未配置」的 UI 使用（如未配置横幅：读取完成前不渲染，避免已配置用户看到闪烁）。
+ * refreshAiStatus() 被调用时自动更新所有挂载的组件。
  */
-export function useAiConfigured(): boolean {
-  const [configured, setConfigured] = useState(cachedConfigured === true)
+export function useAiConfiguredState(): boolean | null {
+  const [configured, setConfigured] = useState<boolean | null>(cachedConfigured)
 
   useEffect(() => {
     if (cachedConfigured === null) {
@@ -41,4 +40,14 @@ export function useAiConfigured(): boolean {
   }, [])
 
   return configured
+}
+
+/**
+ * React hook：AI 是否已配置。
+ *
+ * - 首次调用（缓存 null）时异步读 chrome.storage，返回 false 兜底。
+ * - 缓存有值后同步返回；refreshAiStatus() 被调用时自动更新所有挂载的组件。
+ */
+export function useAiConfigured(): boolean {
+  return useAiConfiguredState() === true
 }

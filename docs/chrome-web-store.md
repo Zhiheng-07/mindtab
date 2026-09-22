@@ -1,6 +1,8 @@
 # MindTab Chrome Web Store 上架材料
 
-> 准备于 2026-05-28
+> 首次准备于 2026-05-28；2026-09-22 按直连版（v0.2.8 起，用户自填 API Key 直连 AI 服务商）全面更新。
+> 商店条目：`ildffcgdmbcaenjkbapfcgaklaejohme`（https://chromewebstore.google.com/detail/mindtab/ildffcgdmbcaenjkbapfcgaklaejohme）。
+> **版本更新一律在该条目内「上传新软件包」**——新建条目会产生新的扩展 ID，老用户的本地数据无法带过去。
 
 ---
 
@@ -17,8 +19,6 @@
 
 ## 2. 详细描述
 
-<!-- TODO（直连版发布时更新）：下方「每日 50 次 AI 搜索额度」已随配额移除而失效；描述需补充 BYOK（用户自填 API Key 直连 AI 服务商）说明。 -->
-
 ```
 MindTab — 不用整理，随时找得到
 
@@ -30,7 +30,10 @@ MindTab 是一款 AI 驱动的书签管理工具，替代 Chrome 新标签页，
 点击扩展图标或右键菜单即可收藏当前页面，AI 自动生成中文摘要、智能标签和内容分类，无需手动整理。
 
 自然语言搜索
-用日常语言描述你想找的内容，AI 语义匹配帮你精准定位。比如搜"上周看的那篇关于 React 性能优化的文章"，一搜即达。
+输入即出本地匹配结果，回车后由 AI 精排。用日常语言描述你想找的内容，比如搜"上周看的那篇关于 React 性能优化的文章"，一搜即达。
+
+使用你自己的 AI 服务
+支持 DeepSeek、OpenAI、Kimi、通义千问、智谱、豆包、硅基流动、MiniMax、阶跃星辰、小米 MiMo、Claude、OpenRouter 等 12 家厂商，以及任意 OpenAI 兼容接口。填入你自己的 API Key 即可使用，请求从浏览器直接发送给你选择的厂商，MindTab 不设中转服务器。未绑定时，收藏与本地搜索照常可用。
 
 智能分类
 书签自动归类为文章、视频、工具、文档等类型，支持自定义文件夹和拖拽排序。
@@ -39,76 +42,81 @@ MindTab 是一款 AI 驱动的书签管理工具，替代 Chrome 新标签页，
 精心设计的 Glass Dashboard 风格界面，支持亮色/暗色/跟随系统主题，视频壁纸背景。
 
 隐私优先
-所有书签数据存储在浏览器本地（IndexedDB），不上传服务器。AI 仅在收藏和搜索时按需调用，书签内容不会被存储在服务端。
+所有书签数据存储在浏览器本地（IndexedDB），不上传 MindTab 服务器。API Key 仅保存在本地，只发送给你自己选择的 AI 服务商。
 
 更多特性：
 - 置顶常用书签，一键直达
 - 导入/导出标准 HTML 书签文件
-- 待确认面板，批量管理新收藏
-- 键盘快捷操作，搜索即用即走
-- 每日 50 次 AI 搜索额度，关键词搜索无限制
+- 待整理面板，批量管理新收藏
+- 键盘方向键选择搜索结果，即用即走
 ```
 
 ---
 
-## 3. 隐私权政策
+## 3. 隐私权规范（开发者后台「隐私权」标签页）
 
-<!-- TODO（直连版发布时更新）：第 3、5 条与新架构矛盾——AI 调用不再固定为 DeepSeek，而是直连用户自行配置的服务商（DeepSeek/OpenAI/Kimi/自定义 OpenAI 兼容端点），API Key 仅存本地 chrome.storage.local，MindTab 不运营任何中转服务器。发布新版时以 docs/privacy-policy/index.html 的新表述为准同步改写。 -->
+### 3.1 单一用途说明
+
+```
+MindTab 的单一用途是 AI 书签管理：替换新标签页，提供书签收藏、AI 自动整理（摘要 / 标签 / 分类）与自然语言搜索。
+```
+
+### 3.2 权限理由（与 `manifest.json` 逐条对应）
+
+| 权限 | 理由（填入后台） |
+|------|---------|
+| `storage` | 在本地保存用户设置（主题、搜索历史、隐私授权状态、用户自填的 AI 服务配置） |
+| `activeTab` | 用户点击扩展图标或右键菜单收藏时，获取当前标签页的标题和 URL |
+| `contextMenus` | 在右键菜单中添加「收藏到 MindTab」 |
+| `scripting` | 用户主动收藏时，从当前页面提取正文片段，用于 AI 生成摘要与标签 |
+| `alarms` | 定时重试待整理书签的 AI 索引，并定期修正书签的网站图标 |
+
+| Host 权限 | 理由（填入后台） |
+|-----------|---------|
+| `https://mindtab-assets-1316694721.cos.ap-shanghai.myqcloud.com/*` | 加载 MindTab 自有的视频壁纸资源（国内 CDN），并缓存到本地 |
+| `https://d8j0ntlcm91z4.cloudfront.net/*` | 加载 MindTab 自有的视频壁纸资源（海外 CDN），并缓存到本地 |
+| `https://*/*`（**可选**权限，`optional_host_permissions`） | 用户在设置中自选 AI 服务商（12 家预设或自定义 OpenAI 兼容接口）。仅在用户保存 / 测试 AI 配置时，按所选服务商的 API 域名在运行时通过 `chrome.permissions.request` 单独申请，用于向该服务商发送 AI 请求；不用于读取网页内容 |
+
+**远程代码**：否（不加载、不执行任何远程代码）。
+
+### 3.3 数据使用申报（建议勾选，提交前自行确认）
+
+| 数据类型 | 说明 |
+|---|---|
+| 网站内容 | 用户主动收藏 / 搜索时，页面标题、URL 与正文片段发送给**用户自己配置的** AI 服务商以生成摘要、标签与搜索结果 |
+| 身份验证信息 | 用户自填的 AI 服务 API Key：仅保存在本地 `chrome.storage.local`，只发送给该服务商 |
+
+三项合规声明均可勾选：不向第三方出售数据；不将数据用于与单一用途无关的目的；不将数据用于判断信用或放贷。
+
+**隐私政策 URL**：https://zhiheng-07.github.io/mindtab-privacy/ （线上页须与 `docs/privacy-policy/index.html` 的直连版表述一致）
+
+---
+
+## 4. 隐私权政策（中文摘要，以 `docs/privacy-policy/index.html` 为准）
 
 ```
 MindTab 隐私权政策
 
-最后更新：2026 年 5 月 28 日
-
 1. 数据收集
-MindTab 不收集、不传输、不存储用户的个人身份信息。
+MindTab 不收集、不传输、不存储用户的个人身份信息，不追踪浏览历史，无需注册账号。
 
 2. 本地存储
-所有书签数据（标题、URL、摘要、标签、文件夹）均存储在用户浏览器本地的 IndexedDB 中，不上传至任何服务器。
+所有书签数据（标题、URL、摘要、标签、文件夹）存储在浏览器本地的 IndexedDB 与 chrome.storage.local 中，除用户主动触发 AI 功能外不会离开设备。
 
 3. AI 服务调用
-当用户主动触发收藏或搜索功能时，MindTab 会将页面标题和 URL 发送至 AI 服务（DeepSeek API）以生成摘要和标签。该过程中：
+当用户主动触发收藏或搜索时，MindTab 会把有限的页面信息直接发送给用户自己配置的 AI 服务商（如 DeepSeek、OpenAI、Kimi 或自定义 OpenAI 兼容接口）。MindTab 不运营任何中转服务器：
 - 仅发送页面标题、URL 和有限的正文片段（≤4000 字符）
-- AI 服务不会存储用户的书签数据
-- 不会发送用户的浏览历史或其他个人信息
+- API Key 仅保存在本地，只发送给用户配置的服务商
+- 服务商如何处理数据，以该服务商自己的隐私政策为准
+- 不发送浏览历史或其他个人信息
 
-4. 匿名统计（可选）
-MindTab 提供可选的匿名使用统计功能，用于改善产品体验。该功能默认开启，用户可随时在设置中关闭。统计数据不包含任何个人身份信息或书签内容。
+4. 第三方服务
+- 用户配置的 AI 服务商：用于 AI 语义索引和搜索
+- 公共网站图标服务：接收网站域名，用于显示网站图标
 
-5. 第三方服务
-MindTab 使用以下第三方服务：
-- DeepSeek API：用于 AI 语义索引和搜索
-- Google Favicon Service：用于获取网站图标
-上述服务仅在用户触发相关功能时按需调用。
-
-6. 数据删除
-用户可随时通过设置页的"清空所有数据"功能删除全部本地数据。卸载扩展将自动清除所有本地存储。
-
-7. 联系方式
-如有隐私相关问题，请通过微信联系：zhihengaipm
+5. 数据删除
+用户可随时通过设置页的「清空所有数据」删除全部本地数据；卸载扩展将自动清除所有本地存储。
 ```
-
----
-
-## 4. 权限说明
-
-Chrome Web Store 审核时需要解释每个权限的用途：
-
-| 权限 | 用途说明 |
-|------|---------|
-| `storage` | 存储用户设置（深色模式、搜索历史、隐私授权状态） |
-| `activeTab` | 获取当前标签页的标题和 URL 以完成收藏操作 |
-| `contextMenus` | 在右键菜单中添加"收藏到 MindTab"选项 |
-| `tabs` | 收藏时读取当前页面信息，检测标签页状态 |
-| `scripting` | 从当前页面提取正文内容用于 AI 摘要生成 |
-| `alarms` | 定时轮询待索引书签队列，执行批量 AI 索引任务 |
-
-<!-- TODO（直连版发布时更新）：下表 `https://mindtab-server.vercel.app/*` 中转服务 host 权限已废弃；新版直连用户配置的 AI 服务商，host 权限说明需按新 manifest 重写。 -->
-
-| Host 权限 | 用途说明 |
-|-----------|---------|
-| `https://mindtab-server.vercel.app/*` | 访问 AI 转发服务，用于书签语义索引和搜索 |
-| `<all_urls>` | 从任意网页提取正文内容和 Favicon 用于收藏 |
 
 ---
 
@@ -118,7 +126,7 @@ Chrome Web Store 要求至少 1 张，最多 5 张截图。
 
 **尺寸要求**：1280x800 或 640x400（像素）
 
-你现有的截图约 2550x1590，需要缩放到 1280x800。
+现有截图约 2550x1590，需要缩放到 1280x800。
 
 **建议选取的 5 张截图**（按展示优先级）：
 
@@ -127,8 +135,8 @@ Chrome Web Store 要求至少 1 张，最多 5 张截图。
 | 1 | `02_dashboard_dark.png` | 暗色主界面 | 第一印象，展示整体视觉风格 |
 | 2 | `05_search_results.png` | AI 搜索结果 | 核心功能展示 |
 | 3 | `03_sidebar_open.png` | 侧边栏文件夹 | 展示分类管理能力 |
-| 4 | `07_pending_panel.png` | 待确认面板 | 展示收藏流程 |
-| 5 | `08_settings.png` | 设置页 | 展示可配置项 |
+| 4 | `07_pending_panel.png` | 待整理面板 | 展示收藏流程 |
+| 5 | `08_settings.png` | 设置页 | 展示 AI 服务配置 |
 
 **缩放命令**（如果你装了 sips）：
 ```bash
@@ -151,27 +159,31 @@ sips -z 800 1280 截图文件.png --out output.png
 
 ## 7. 打包发布步骤
 
+商店包与 GitHub Release 使用**同一个 zip**。
+
 ```bash
-# 1. 确保最新构建
+# 1. 确保最新构建（版本号已四处 bump）
 npm run build
 
-# 2. 打包 dist 为 ZIP
-cd dist && zip -r ../mindtab-v0.1.0.zip . && cd ..
+# 2. 打包 dist 为 ZIP（manifest.json 须在 zip 根目录）
+cd dist && zip -r ../releases/mindtab-vX.X.X.zip . -x '*.DS_Store' && cd ..
 
-# 3. 上传到 Chrome Web Store Developer Dashboard
+# 3. 上传前检查
+unzip -p releases/mindtab-vX.X.X.zip manifest.json | grep '"version"'
+
+# 4. 上传到 Chrome Web Store Developer Dashboard
 #    https://chrome.google.com/webstore/devconsole
+#    打开已有条目 ildffcgdmbcaenjkbapfcgaklaejohme →「软件包」→「上传新软件包」
 ```
 
 ---
 
-## 8. 上架检查清单
+## 8. 版本更新检查清单
 
-- [ ] Chrome 开发者账号已注册（一次性 $5 费用）
-- [ ] `mindtab-v0.1.0.zip` 已打包
-- [ ] 截图已缩放至 1280x800（至少 1 张）
-- [ ] 小宣传图 440x280 已制作（推荐）
-- [ ] 商店名称、短描述、详细描述已填写
-- [ ] 隐私权政策已发布（可放 GitHub Pages 或 Notion 公开页）
-- [ ] 权限说明已填写
-- [ ] 分类已选择（效率工具）
+- [ ] 版本号高于商店当前线上版本（商店不支持降级）
+- [ ] zip 已打包，根目录有 `manifest.json`，版本号正确
+- [ ] 上传到**原条目** `ildffcgdmbcaenjkbapfcgaklaejohme`（不新建条目）
+- [ ] 权限未新增必选项（新增必选权限会导致老用户升级后扩展被停用、需重新授权）
+- [ ] 详细描述、单一用途、权限理由、数据使用申报与本文件一致
+- [ ] 线上隐私政策页与 `docs/privacy-policy/index.html` 一致
 - [ ] 提交审核

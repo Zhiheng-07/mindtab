@@ -11,6 +11,8 @@ export const STORAGE_KEYS = {
   searchAdaptive: 'mt:searchAdaptive',
   improveProduct: 'mt:improveProduct',
   lastSeenVersion: 'mt:lastSeenVersion',
+  // AI 绑定引导是否已弹出过（每人只弹一次，跳过后靠首页横幅提醒）
+  aiGuideShown: 'mt:aiGuideShown',
   // AI 直连配置（provider/apiKey/baseUrl/model），单 key 存整个对象，保证原子读写
   aiConfig: 'mt:aiConfig',
 } as const

@@ -47,7 +47,7 @@ src/
 │   ├── sidebar/             侧导栏与文件夹树：components + db.ts + hooks + lib
 │   ├── search/              搜索：components + hooks + lib(localIndex/frecency) + storage.ts
 │   ├── settings/            设置模态（含 AI 服务配置区）
-│   ├── onboarding/          隐私弹窗 + 版本更新弹窗：components + lib(privacy/whatsNew)
+│   ├── onboarding/          隐私弹窗 + 版本更新弹窗 + AI 绑定引导：components + hooks(useOnboardingFlow) + lib(privacy/whatsNew/aiGuide)
 │   ├── filter/              内容类型筛选栏
 │   ├── theme/               亮暗主题 store
 │   ├── toast/               通知（sonner 封装：id 去重 + 时长分层）
@@ -100,7 +100,7 @@ v3 新增 `by-indexStatus` 索引（drain 走索引取待办，不再全表扫�
 |---|---|
 | `mt:aiConfig` | AI 直连配置（provider/apiKey/baseUrl/model），单 key 原子读写 |
 | `mt:darkMode` | 主题：system / light / dark |
-| `mt:privacyAgreed` / `mt:importGuideShown` / `mt:lastSeenVersion` | 引导与弹窗状态 |
+| `mt:privacyAgreed` / `mt:importGuideShown` / `mt:lastSeenVersion` / `mt:aiGuideShown` | 引导与弹窗状态 |
 | `mt:searchHistory` | 搜索历史（最多 15 条） |
 | `mt:searchFrecency` / `mt:searchAdaptive` | 搜索排序增强数据 |
 | `mt:improveProduct` | 匿名统计开关 |
