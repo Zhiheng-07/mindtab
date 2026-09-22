@@ -374,6 +374,16 @@ export function AiSettingsSection({ variant = 'settings', onSaved }: Props = {})
             不同服务商需使用各自的 API Key
           </span>
         )}
+        {preset?.keyUrl && (
+          <a
+            href={preset.keyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="self-start mt-1 text-[11px] text-[var(--mt-text-muted)] underline underline-offset-2 hover:text-[var(--mt-text-strong)] transition-colors"
+          >
+            去 {preset.label} 控制台获取 API Key ↗
+          </a>
+        )}
       </FieldRow>
 
       {provider === 'custom' && (

@@ -24,6 +24,8 @@ export interface AiProviderPreset {
   label: string
   baseUrl: string
   defaultModel: string
+  /** 厂商控制台「创建 / 管理 API Key」页（2026-09 按各家官方文档核实；厂商改版时维护此处） */
+  keyUrl?: string
 }
 
 // 注意：defaultModel 为 2026-07 时点的常用型号，厂商可能更新换代，维护时留意。
@@ -33,72 +35,84 @@ export const AI_PROVIDER_PRESETS: AiProviderPreset[] = [
     label: 'DeepSeek',
     baseUrl: 'https://api.deepseek.com/v1',
     defaultModel: 'deepseek-chat',
+    keyUrl: 'https://platform.deepseek.com/api_keys',
   },
   {
     id: 'openai',
     label: 'OpenAI',
     baseUrl: 'https://api.openai.com/v1',
     defaultModel: 'gpt-4o-mini',
+    keyUrl: 'https://platform.openai.com/api-keys',
   },
   {
     id: 'kimi',
     label: 'Kimi (Moonshot)',
     baseUrl: 'https://api.moonshot.cn/v1',
     defaultModel: 'moonshot-v1-8k',
+    keyUrl: 'https://platform.kimi.com/console/api-keys',
   },
   {
     id: 'qwen',
     label: '通义千问',
     baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     defaultModel: 'qwen-plus',
+    keyUrl: 'https://bailian.console.aliyun.com/cn-beijing/model/settings/api-key',
   },
   {
     id: 'glm',
     label: '智谱 GLM',
     baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
     defaultModel: 'glm-4-flash',
+    keyUrl: 'https://bigmodel.cn/usercenter/proj-mgmt/apikeys',
   },
   {
     id: 'doubao',
     label: '豆包 (火山)',
     baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
     defaultModel: 'doubao-1-5-lite-32k-250115',
+    keyUrl: 'https://ark.volcengine.com/region:cn-beijing/apiKey',
   },
   {
     id: 'siliconflow',
     label: '硅基流动',
     baseUrl: 'https://api.siliconflow.cn/v1',
     defaultModel: 'deepseek-ai/DeepSeek-V3',
+    keyUrl: 'https://cloud.siliconflow.cn/account/ak',
   },
   {
     id: 'minimax',
     label: 'MiniMax',
     baseUrl: 'https://api.minimaxi.com/v1',
     defaultModel: 'MiniMax-Text-01',
+    keyUrl: 'https://platform.minimax.cn/user-center/basic-information/interface-key',
   },
   {
     id: 'stepfun',
     label: '阶跃星辰',
     baseUrl: 'https://api.stepfun.com/v1',
     defaultModel: 'step-2-mini',
+    keyUrl: 'https://platform.stepfun.com/interface-key',
   },
   {
     id: 'mimo',
     label: '小米 MiMo',
     baseUrl: 'https://api.xiaomimimo.com/v1',
     defaultModel: 'mimo-v2-flash',
+    keyUrl: 'https://platform.xiaomimimo.com/#/console/api-keys',
   },
   {
     id: 'claude',
     label: 'Claude (Anthropic)',
     baseUrl: 'https://api.anthropic.com/v1',
     defaultModel: 'claude-3-5-haiku-latest',
+    keyUrl: 'https://platform.claude.com/settings/keys',
   },
   {
     id: 'openrouter',
     label: 'OpenRouter',
     baseUrl: 'https://openrouter.ai/api/v1',
     defaultModel: 'openai/gpt-4o-mini',
+    keyUrl: 'https://openrouter.ai/keys',
   },
 ]
 
