@@ -41,7 +41,7 @@ export function PrivacyModal({ open, onAgree, onDismiss }: Props) {
             <DialogTitle>欢迎使用 MindTab</DialogTitle>
           </DialogHeader>
           <DialogDescription className="mt-1.5">
-            AI 原生书签管理扩展。所有数据存放在你的浏览器本地，语义索引仅在触发时调用本地中转服务。
+            AI 原生书签管理扩展。所有数据存放在你的浏览器本地，仅在你触发 AI 整理或搜索时，才会把必要内容直接发送给你自己配置的 AI 服务商。
           </DialogDescription>
         </div>
 
@@ -53,7 +53,7 @@ export function PrivacyModal({ open, onAgree, onDismiss }: Props) {
           <ul className="text-xs leading-7 text-muted-foreground list-disc pl-5">
             <li>收藏内容（URL/标题/摘要）保存在 IndexedDB，不上传服务器</li>
             <li>设置项保存在 chrome.storage.local</li>
-            <li>AI 索引/搜索请求经由你电脑上的本地服务转发至大模型 API</li>
+            <li>AI 索引/搜索请求从浏览器直接发送给你自己配置的 AI 服务商，MindTab 不设中转服务器</li>
             <li>不收集浏览历史，不上报个人信息</li>
           </ul>
         </Collapsible>
