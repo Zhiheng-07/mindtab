@@ -1,8 +1,9 @@
 /**
- * UI 冒烟测试：SettingsModal AI 服务配置
+ * UI 冒烟测试：首次引导（隐私 → AI 绑定引导）+ SettingsModal AI 服务配置 + 搜索
  *
- * 用 Puppeteer 加载 dist/ 扩展，模拟点击打开设置模态，
- * 展开服务商下拉菜单、切换厂商，截屏验证交互正常。
+ * 用 Puppeteer 加载 dist/ 扩展：走新用户引导（跳过 AI 绑定 → 空状态横幅），
+ * 打开设置模态、展开服务商下拉菜单、切换厂商，搜索冒烟，
+ * 最后重置引导标记走一遍「引导内保存配置」路径，截屏验证交互正常。
  *
  * 用法：node scripts/ui-smoke.mjs
  * 前置：npm run build（dist/ 需存在且最新）
@@ -93,6 +94,78 @@ async function main() {
       target?.click()
     })
     await new Promise((r) => setTimeout(r, 800))
+  }
+
+  // ── 新用户 AI 绑定引导：同意隐私后应弹出，跳过后空状态也有未配置横幅 ──
+  console.log('🧪 测试 AI 绑定引导（新用户）...')
+  try {
+    await page.waitForFunction(() => document.body.textContent.includes('绑定你的 AI 服务'), {
+      timeout: 5_000,
+    })
+    PASS('同意隐私后弹出 AI 绑定引导')
+  } catch {
+    FAIL('同意隐私后未弹出 AI 绑定引导')
+  }
+  await page.screenshot({ path: path.join(screenshotDir, '00a-ai-guide.png') })
+  const guideState = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]')
+    const text = dialog?.textContent ?? ''
+    const link = [...(dialog?.querySelectorAll('a') ?? [])].find((a) =>
+      a.textContent?.includes('获取 API Key'),
+    )
+    return {
+      saveLabel: text.includes('保存并开始使用'),
+      skip: text.includes('稍后再说'),
+      noSettingsTitle: !text.includes('AI 服务配置'),
+      keyLink: link ? { href: link.href, target: link.target } : null,
+    }
+  })
+  if (guideState.saveLabel && guideState.skip && guideState.noSettingsTitle) {
+    PASS('引导弹窗为 guide 形态（「保存并开始使用」+「稍后再说」，无设置摘要行）')
+  } else {
+    FAIL(`引导弹窗形态异常: ${JSON.stringify(guideState)}`)
+  }
+  if (guideState.keyLink?.href.startsWith('https://') && guideState.keyLink.target === '_blank') {
+    PASS(`「获取 API Key」链接存在：${guideState.keyLink.href}`)
+  } else {
+    FAIL(`「获取 API Key」链接缺失或未新标签打开: ${JSON.stringify(guideState.keyLink)}`)
+  }
+  // 引导弹窗内的服务商下拉需可展开（Dialog 内浮层层级）
+  const guideTrigger = await page.evaluateHandle(() => {
+    for (const label of document.querySelectorAll('[role="dialog"] span')) {
+      if (label.textContent === '服务商') {
+        return label.closest('div[style*="justify-content"]')?.querySelector('button') ?? null
+      }
+    }
+    return null
+  })
+  if (guideTrigger.asElement()) {
+    await guideTrigger.asElement().click()
+    await new Promise((r) => setTimeout(r, 500))
+    const items = await page.$$('[role="menuitemradio"]')
+    await page.screenshot({ path: path.join(screenshotDir, '00b-ai-guide-dropdown.png') })
+    if (items.length >= 2) PASS(`引导内服务商下拉可展开：${items.length} 项`)
+    else FAIL(`引导内服务商下拉未展开: ${items.length}`)
+    await page.keyboard.press('Escape') // 只关下拉
+    await new Promise((r) => setTimeout(r, 300))
+  } else {
+    FAIL('引导内未找到服务商下拉 trigger')
+  }
+  await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('button')].find((b) => b.textContent === '稍后再说')
+    btn?.click()
+  })
+  await new Promise((r) => setTimeout(r, 800))
+  const afterSkip = await page.evaluate(async () => ({
+    guideOpen: document.body.textContent.includes('绑定你的 AI 服务'),
+    banner: document.body.textContent.includes('AI 未配置'),
+    flag: (await chrome.storage.local.get('mt:aiGuideShown'))['mt:aiGuideShown'],
+  }))
+  await page.screenshot({ path: path.join(screenshotDir, '00c-ai-guide-skipped.png') })
+  if (!afterSkip.guideOpen && afterSkip.banner && afterSkip.flag === true) {
+    PASS('「稍后再说」后引导关闭，空状态显示未配置横幅，mt:aiGuideShown 已写入')
+  } else {
+    FAIL(`跳过引导后状态异常: ${JSON.stringify(afterSkip)}`)
   }
 
   // 强行点击设置按钮（force: true 绕过层级遮挡）
@@ -442,6 +515,48 @@ async function main() {
     } else {
       FAIL(`降级链路异常: 横幅=${submitted.degraded} 标注=${submitted.label} 结果=${submitted.stillHasResults}`)
     }
+  }
+
+  // ── 引导内保存路径：重置引导标记 → 刷新（已同意隐私、无版本弹窗 → 首屏直接弹）→ 填 Key 保存 ──
+  console.log('🧪 测试 AI 绑定引导内保存配置...')
+  await page.evaluate(() => chrome.storage.local.remove('mt:aiGuideShown'))
+  await page.reload({ waitUntil: 'load' })
+  await page.waitForSelector('button[aria-label="设置"]', { timeout: 15_000 })
+  try {
+    await page.waitForFunction(() => document.body.textContent.includes('绑定你的 AI 服务'), {
+      timeout: 5_000,
+    })
+    PASS('重置标记后首屏弹出 AI 绑定引导')
+    await page.evaluate(() => {
+      const keyInput = [...document.querySelectorAll('[role="dialog"] input')].find((i) =>
+        i.placeholder?.includes('sk-'),
+      )
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+      setter.call(keyInput, 'sk-dummy-for-test')
+      keyInput.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await new Promise((r) => setTimeout(r, 300))
+    await page.evaluate(() => {
+      const btn = [...document.querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('保存并开始使用'),
+      )
+      btn?.click()
+    })
+    await new Promise((r) => setTimeout(r, 1200))
+    await page.screenshot({ path: path.join(screenshotDir, '10-ai-guide-saved.png') })
+    const afterSave = await page.evaluate(async () => ({
+      guideOpen: document.body.textContent.includes('绑定你的 AI 服务'),
+      banner: document.body.textContent.includes('AI 未配置'),
+      config: (await chrome.storage.local.get('mt:aiConfig'))['mt:aiConfig'],
+    }))
+    if (!afterSave.guideOpen && !afterSave.banner && afterSave.config?.apiKey === 'sk-dummy-for-test') {
+      PASS('引导内保存后弹窗关闭、横幅消失、mt:aiConfig 已写入')
+    } else {
+      FAIL(`引导内保存后状态异常: ${JSON.stringify({ ...afterSave, config: !!afterSave.config })}`)
+    }
+  } catch {
+    await page.screenshot({ path: path.join(screenshotDir, 'debug-guide-save-fail.png') })
+    FAIL('重置标记后未弹出 AI 绑定引导（见 debug-guide-save-fail.png）')
   }
 
   await browser.close()
